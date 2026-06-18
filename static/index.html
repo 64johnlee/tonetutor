@@ -358,6 +358,7 @@ html, body {
           <div class="cta-wrap">
             <button class="btn-start" id="start-btn">Start Conversation →</button>
             <span class="cta-note">Lin Wei will greet you in Mandarin</span>
+            <div id="free-badge" class="cta-note" style="display:none;margin-top:.4rem;font-weight:600;color:var(--amber)"></div>
           </div>
         </div>
       </div>
@@ -445,6 +446,68 @@ html, body {
 const API = '';
 const state = { topic: 'restaurant', level: 'HSK2', sessionId: null };
 
+// ── Billing / access ────────────────────────────────────────────────────────
+function getUid() {
+  let id = localStorage.getItem('tt_uid');
+  if (!id) {
+    id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+       : 'u-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+    localStorage.setItem('tt_uid', id);
+  }
+  return id;
+}
+let _access = { billing_enabled:false, paid:true, free_used:0, free_limit:3 };
+async function refreshAccess() {
+  try {
+    const res = await fetch(`${API}/api/access?uid=${encodeURIComponent(getUid())}`);
+    if (res.ok) _access = await res.json();
+  } catch(_) {}
+  renderFreeBadge();
+}
+function renderFreeBadge() {
+  const el = document.getElementById('free-badge');
+  if (!el) return;
+  if (!_access.billing_enabled) { el.style.display = 'none'; return; }
+  if (_access.paid) { el.textContent = '★ Pro — unlimited'; el.style.color = 'var(--green)'; el.style.display = ''; return; }
+  const left = Math.max(0, (_access.free_limit || 3) - (_access.free_used || 0));
+  el.textContent = `${left} free session${left === 1 ? '' : 's'} left`;
+  el.style.color = left === 0 ? 'var(--red)' : 'var(--amber)';
+  el.style.display = '';
+}
+function showPaywall() { const m = document.getElementById('paywall-modal'); if (m) m.style.display = 'flex'; }
+function hidePaywall() { const m = document.getElementById('paywall-modal'); if (m) m.style.display = 'none'; }
+async function startCheckout() {
+  const btn = document.getElementById('subscribe-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Opening checkout…'; }
+  try {
+    const res = await fetch(`${API}/api/checkout`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid: getUid() })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const d = await res.json();
+    window.location.href = d.url;
+  } catch(e) {
+    alert('Could not open checkout: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = 'Subscribe →'; }
+  }
+}
+(function initBilling() {
+  const paid = new URLSearchParams(location.search).get('paid');
+  if (paid) history.replaceState({}, '', location.pathname);
+  refreshAccess();
+  if (paid === 'success') {
+    let n = 0;
+    const t = setInterval(async () => {
+      await refreshAccess();
+      if (++n >= 6 || _access.paid) {
+        clearInterval(t);
+        if (_access.paid) alert('🎉 Subscription active — enjoy unlimited practice!');
+      }
+    }, 1500);
+  }
+})();
+
 const LEVEL_DESCS = {
   HSK1: 'Beginner — 150 words, very simple sentences only',
   HSK2: 'Elementary — 300 words, simple daily sentences',
@@ -482,10 +545,12 @@ document.getElementById('start-btn').addEventListener('click', async () => {
   try {
     const res = await fetch(`${API}/api/session/start`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ topic: state.topic, level: state.level })
+      body: JSON.stringify({ topic: state.topic, level: state.level, uid: getUid() })
     });
+    if (res.status === 402) { btn.disabled = false; btn.textContent = 'Start Conversation →'; showPaywall(); return; }
     if (!res.ok) throw new Error(await res.text());
     const d = await res.json();
+    refreshAccess();
     state.sessionId = d.session_id;
     document.getElementById('chat-label').textContent = `${cap(state.topic)} · ${state.level}`;
     document.getElementById('turn-counter').textContent = '0 turns';
@@ -786,5 +851,33 @@ function _encodePCM16(chunks) {
 
 function cap(s) { return s.charAt(0).toUpperCase()+s.slice(1); }
 </script>
+
+<style>
+.paywall-overlay { display:none; position:fixed; inset:0; background:rgba(1,4,9,0.78); backdrop-filter:blur(6px); z-index:50; align-items:center; justify-content:center; padding:1.2rem; }
+.paywall-card { background:var(--surface); border:1px solid var(--border-hi); border-radius:var(--radius-lg); max-width:360px; width:100%; padding:1.6rem 1.4rem; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.5); }
+.paywall-title { font-size:1.12rem; font-weight:700; color:var(--text); margin-bottom:.5rem; }
+.paywall-sub { font-size:.85rem; color:var(--sub); line-height:1.5; margin-bottom:1rem; }
+.paywall-price { font-size:2rem; font-weight:800; color:var(--text); margin-bottom:.6rem; }
+.paywall-price span { font-size:.9rem; font-weight:500; color:var(--sub); }
+.paywall-feat { list-style:none; padding:0; margin:0 0 1.1rem; text-align:left; }
+.paywall-feat li { font-size:.82rem; color:var(--sub); padding:.2rem 0 .2rem 1.4rem; position:relative; }
+.paywall-feat li::before { content:'✓'; position:absolute; left:0; color:var(--green); font-weight:700; }
+.paywall-close { background:none; border:none; color:var(--sub); font-size:.8rem; cursor:pointer; margin-top:.7rem; font-family:inherit; }
+</style>
+<div id="paywall-modal" class="paywall-overlay" role="dialog" aria-modal="true" aria-label="Subscribe to continue">
+  <div class="paywall-card">
+    <div class="paywall-title">You've used your 3 free sessions 🎉</div>
+    <div class="paywall-sub">Keep practicing with Lin Wei — unlimited conversations and tone feedback.</div>
+    <div class="paywall-price">$5<span>/month</span></div>
+    <ul class="paywall-feat">
+      <li>Unlimited practice sessions</li>
+      <li>Every scenario &amp; HSK 1–6 level</li>
+      <li>Tone grading, pinyin &amp; voice on every reply</li>
+      <li>Cancel anytime</li>
+    </ul>
+    <button class="btn-start" id="subscribe-btn" onclick="startCheckout()">Subscribe →</button>
+    <button class="paywall-close" onclick="hidePaywall()">Maybe later</button>
+  </div>
+</div>
 </body>
 </html>

@@ -1,3 +1,4 @@
+import os
 import uuid
 from datetime import datetime
 from fastapi import APIRouter, HTTPException
@@ -10,9 +11,17 @@ from .store import sessions
 
 router = APIRouter(prefix="/api/session", tags=["session"])
 
+# Paywall is off until Stripe is configured, so the app stays free until then.
+BILLING_ON = bool(os.getenv("STRIPE_SECRET_KEY"))
+
 
 @router.post("/start", response_model=SessionStartResponse)
 async def start_session(req: StartSessionRequest):
+    if BILLING_ON and req.uid:
+        from services.db import can_start_and_consume
+        access = can_start_and_consume(req.uid)
+        if not access["allowed"]:
+            raise HTTPException(status_code=402, detail="free_exhausted")
     try:
         opening = get_opening(req.topic, req.level)
     except ResourceExhausted:

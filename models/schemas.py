@@ -43,6 +43,7 @@ HSK_DESCRIPTIONS = {
 class StartSessionRequest(BaseModel):
     topic: Topic
     level: HskLevel = HskLevel.hsk2
+    uid: Optional[str] = None
 
 
 class ChatRequest(BaseModel):
