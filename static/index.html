@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>ToneTutor — Mandarin AI Practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:          #0D1117;
+  --surface:     #161B22;
+  --card:        #1C2432;
+  --border:      rgba(255,255,255,0.07);
+  --border-hi:   rgba(255,255,255,0.14);
+  --red:         #E5534B;
+  --red-dim:     rgba(229,83,75,0.13);
+  --red-hover:   #F0655D;
+  --text:        #E6EDF3;
+  --sub:         #7D8590;
+  --muted:       #3D444D;
+  --green:       #3FB950;
+  --green-dim:   rgba(63,185,80,0.12);
+  --amber:       #D29922;
+  --amber-dim:   rgba(210,153,34,0.12);
+  --blue:        #58A6FF;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+}
+
+html, body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+/* ── Screen switcher ─────────────────────────────────────────────────────── */
+.screen { display: none; min-height: 100vh; flex-direction: column; }
+.screen.active { display: flex; animation: rise 0.28s cubic-bezier(0.4,0,0.2,1); }
+@keyframes rise { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:none; } }
+
+/* ── Shared top nav ──────────────────────────────────────────────────────── */
+.topnav {
+  position: sticky; top: 0; z-index: 100;
+  height: 54px; padding: 0 1.5rem;
+  display: flex; align-items: center; gap: 0.75rem;
+  background: rgba(13,17,23,0.8); backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-brand { font-size: 0.95rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 0.4rem; flex-shrink: 0; }
+.nav-brand-dot { color: var(--red); font-size: 1.1rem; line-height: 1; }
+.nav-sep { width: 1px; height: 20px; background: var(--border-hi); flex-shrink: 0; }
+.nav-context { font-size: 0.82rem; color: var(--sub); }
+.nav-spacer { flex: 1; }
+.nav-pill { display: flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: var(--sub); background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 0.22rem 0.65rem; white-space: nowrap; }
+.nav-icon-btn { background: none; border: none; cursor: pointer; color: var(--sub); font-size: 0.82rem; font-weight: 500; padding: 0.3rem 0.65rem; border-radius: var(--radius-sm); transition: all .12s; font-family: inherit; }
+.nav-icon-btn:hover { background: var(--card); color: var(--text); }
+.nav-icon-btn.end { color: var(--red); }
+.nav-icon-btn.end:hover { background: var(--red-dim); }
+#speak-toggle.muted { color: var(--muted); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SETUP SCREEN
+   ═══════════════════════════════════════════════════════════════════════════ */
+#screen-setup > .topnav + .setup-page { flex: 1; display: flex; flex-direction: column; }
+
+.setup-page {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 2.5rem 1.5rem 3rem;
+}
+.setup-inner {
+  width: 100%; max-width: 520px;
+  display: flex; flex-direction: column; gap: 1.5rem;
+}
+
+.setup-hero { text-align: center; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700;
+  color: var(--red); background: var(--red-dim); border: 1px solid rgba(229,83,75,0.22);
+  border-radius: 20px; padding: 0.2rem 0.65rem; margin-bottom: 0.9rem;
+}
+.hero-title {
+  font-size: clamp(1.9rem, 5vw, 2.6rem); font-weight: 800; letter-spacing: -1.2px;
+  line-height: 1.1; color: var(--text); margin-bottom: 0.65rem;
+}
+.hero-cjk { color: var(--red); }
+.hero-desc { font-size: 0.95rem; color: var(--sub); max-width: 380px; margin: 0 auto; }
+
+/* Config card */
+.config-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.config-section { padding: 1.1rem 1.3rem; border-bottom: 1px solid var(--border); }
+.config-section:last-child { border-bottom: none; }
+.config-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.09em; font-weight: 700; color: var(--muted); margin-bottom: 0.75rem; }
+
+/* Scenario chips */
+.scenario-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.scenario-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.36rem 0.75rem;
+  background: var(--card); border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  cursor: pointer; font-size: 0.84rem; font-weight: 500; color: var(--sub);
+  transition: all .12s; user-select: none;
+}
+.scenario-chip:hover { border-color: var(--border-hi); color: var(--text); }
+.scenario-chip.selected { background: var(--red-dim); border-color: var(--red); color: var(--text); }
+
+/* Level row */
+.level-row { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.level-btn {
+  padding: 0.35rem 0.75rem; background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); cursor: pointer; font-size: 0.82rem; font-weight: 600;
+  color: var(--sub); transition: all .12s; user-select: none; font-family: inherit;
+}
+.level-btn:hover { border-color: var(--border-hi); color: var(--text); }
+.level-btn.selected { background: var(--red-dim); border-color: var(--red); color: var(--red); }
+
+.level-desc {
+  margin-top: 0.55rem; font-size: 0.78rem; color: var(--sub);
+  padding: 0.45rem 0.65rem; background: var(--card); border-radius: var(--radius-sm);
+  border-left: 2px solid var(--red); min-height: 2rem;
+}
+
+/* Start CTA */
+.cta-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.65rem; }
+.btn-start {
+  width: 100%; padding: 0.9rem; background: var(--red); color: white; border: none;
+  border-radius: var(--radius-md); font-size: 1rem; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: all .14s; letter-spacing: 0.01em;
+  box-shadow: 0 4px 24px rgba(229,83,75,0.38);
+}
+.btn-start:hover { background: var(--red-hover); transform: translateY(-1px); box-shadow: 0 8px 28px rgba(229,83,75,0.48); }
+.btn-start:active { transform: none; }
+.btn-start:disabled { background: var(--card); color: var(--muted); box-shadow: none; cursor: not-allowed; transform: none; }
+.cta-note { font-size: 0.73rem; color: var(--muted); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CHAT SCREEN
+   ═══════════════════════════════════════════════════════════════════════════ */
+#screen-chat { min-height: 100vh; overflow: hidden; height: 100vh; }
+
+.chat-content {
+  flex: 1; display: flex; flex-direction: column; max-width: 780px;
+  width: 100%; margin: 0 auto; padding: 0 1.5rem; min-height: 0;
+  overflow: hidden;
+}
+
+#messages {
+  flex: 1; overflow-y: auto; padding: 1.5rem 0;
+  display: flex; flex-direction: column; gap: 1.1rem;
+  scroll-behavior: smooth;
+}
+#messages::-webkit-scrollbar { width: 4px; }
+#messages::-webkit-scrollbar-track { background: transparent; }
+#messages::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 2px; }
+
+/* Message rows */
+@keyframes msg-in { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+.msg { display: flex; flex-direction: column; animation: msg-in .2s ease-out; }
+.msg.lin-wei { align-items: flex-start; }
+.msg.learner  { align-items: flex-end; }
+
+.msg-who { font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 700; color: var(--muted); margin-bottom: 0.3rem; padding: 0 0.15rem; }
+
+.msg-bubble {
+  max-width: min(72%, 560px); padding: 0.8rem 1rem; border-radius: var(--radius-md);
+  border: 1px solid var(--border); line-height: 1.5;
+}
+.lin-wei .msg-bubble { background: var(--surface); border-radius: 3px var(--radius-md) var(--radius-md) var(--radius-md); }
+.learner  .msg-bubble { background: var(--red); border: none; border-radius: var(--radius-md) 3px var(--radius-md) var(--radius-md); }
+
+.msg-zh { font-size: 1.25rem; font-weight: 500; line-height: 2.85; color: var(--text); }
+.learner .msg-zh { color: #fff; }
+.msg-zh rt { font-size: 0.45em; font-weight: 400; color: var(--sub); line-height: 1; }
+.learner .msg-zh rt { color: rgba(255,255,255,0.5); }
+.msg-en { font-size: 0.78rem; color: var(--sub); margin-top: 0.1rem; }
+
+.speak-btn {
+  background: none; border: none; cursor: pointer; font-size: 0.72rem; color: var(--muted);
+  font-family: inherit; padding: 0.15rem 0; margin-top: 0.3rem; transition: color .12s;
+  display: inline-flex; align-items: center; gap: 0.2rem;
+}
+.speak-btn:hover { color: var(--red); }
+
+/* Grade bar — sits below bubble */
+.grade-bar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+  padding: 0.45rem 0.75rem; background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); font-size: 0.8rem; max-width: min(72%, 560px);
+  margin-top: 0.3rem;
+}
+.grade-pill { padding: 0.12rem 0.5rem; border-radius: 20px; font-weight: 700; font-size: 0.78rem; }
+.grade-pill.high { background: var(--green-dim); color: var(--green); }
+.grade-pill.mid  { background: var(--amber-dim); color: var(--amber); }
+.grade-pill.low  { background: var(--red-dim); color: var(--red); }
+@keyframes perfect-pop { 0%{transform:scale(.5);opacity:0} 70%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+.perfect-badge { font-weight:700; color:var(--green); animation:perfect-pop .4s cubic-bezier(.34,1.56,.64,1); }
+.grade-correct    { color: var(--green); }
+.grade-error      { color: var(--amber); }
+.grade-suggestion { color: var(--blue); font-style: italic; }
+
+/* Typing indicator */
+@keyframes dot-bounce { 0%,80%,100%{transform:translateY(0);opacity:.25} 40%{transform:translateY(-5px);opacity:1} }
+.typing-dots {
+  display:flex; gap:5px; align-items:center; padding:0.8rem 1rem;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:3px var(--radius-md) var(--radius-md) var(--radius-md); width:fit-content;
+}
+.typing-dots span { width:7px; height:7px; background:var(--red); border-radius:50%; animation:dot-bounce 1.2s ease-in-out infinite; }
+.typing-dots span:nth-child(2){animation-delay:.18s}
+.typing-dots span:nth-child(3){animation-delay:.36s}
+
+/* Lin Wei speaking glow */
+@keyframes speaking-glow { 0%,100%{box-shadow:0 0 0 0 transparent} 50%{box-shadow:0 0 0 3px rgba(229,83,75,0.25)} }
+.lin-wei.speaking .msg-bubble { animation: speaking-glow 1s ease-in-out infinite; }
+
+/* Input bar */
+.input-dock {
+  flex-shrink: 0; border-top: 1px solid var(--border);
+  background: rgba(13,17,23,0.88); backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px); padding: 0.75rem 0;
+}
+.input-inner { max-width: 780px; margin: 0 auto; padding: 0 1.5rem; }
+.input-field-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-md);
+  padding: 0.5rem 0.65rem; transition: border-color .15s;
+}
+.input-field-row:focus-within { border-color: var(--red); }
+#user-input {
+  flex: 1; background: none; border: none; color: var(--text); font-size: 0.94rem;
+  font-family: inherit; outline: none; padding: 0.2rem 0.2rem; line-height: 1.4;
+}
+#user-input::placeholder { color: var(--muted); }
+#mic-btn {
+  background: none; border: none; cursor: pointer; color: var(--sub); font-size: 1rem;
+  padding: 0.25rem; transition: color .12s; flex-shrink: 0;
+}
+#mic-btn:hover { color: var(--red); }
+@keyframes mic-blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+#mic-btn.recording { color: var(--red); animation: mic-blink 1.2s infinite; }
+#mic-btn:disabled { opacity:.3; cursor:not-allowed; }
+#send-btn {
+  background: var(--red); border: none; color: #fff; width: 30px; height: 30px;
+  border-radius: var(--radius-sm); cursor: pointer; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+  transition: background .12s;
+}
+#send-btn:hover { background: var(--red-hover); }
+#send-btn:disabled { background: var(--card); color: var(--muted); cursor: not-allowed; }
+.input-meta-row { display: flex; justify-content: space-between; align-items: center; margin-top: 0.4rem; padding: 0 0.1rem; }
+#char-counter { font-size: 0.67rem; color: var(--muted); }
+#char-counter.warn { color: var(--amber); }
+.end-hint { font-size: 0.67rem; color: var(--muted); }
+.end-hint button { background: none; border: none; color: var(--sub); font-size: 0.67rem; font-family: inherit; cursor: pointer; padding: 0; }
+.end-hint button:hover { color: var(--red); text-decoration: underline; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SUMMARY SCREEN
+   ═══════════════════════════════════════════════════════════════════════════ */
+.summary-body {
+  max-width: 600px; margin: 0 auto; padding: 2rem 1.5rem 3rem;
+  display: flex; flex-direction: column; gap: 1rem; flex: 1;
+}
+
+.score-block { text-align: center; padding: 0.5rem 0 1rem; }
+.score-ring-wrap { position:relative; width:150px; height:150px; margin:0 auto 0.6rem; }
+.score-ring-wrap svg { width:150px; height:150px; transform:rotate(-90deg); }
+.score-ring-bg   { fill:none; stroke:var(--muted); stroke-width:8; opacity:.3; }
+.score-ring-fill { fill:none; stroke:var(--red); stroke-width:8; stroke-linecap:round; stroke-dasharray:339; stroke-dashoffset:339; transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1),stroke .4s; }
+.score-ring-num  { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:2.2rem; font-weight:800; color:var(--red); letter-spacing:-2px; }
+.score-label     { font-size:0.82rem; color:var(--sub); }
+
+.sum-block { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; }
+.sum-block-title { padding:0.6rem 1.1rem; font-size:0.68rem; text-transform:uppercase; letter-spacing:.09em; font-weight:700; color:var(--muted); border-bottom:1px solid var(--border); background:var(--bg); }
+.sum-block ul { list-style:none; }
+.sum-block ul li { display:flex; gap:0.5rem; padding:0.7rem 1.1rem; font-size:0.88rem; color:var(--text); border-bottom:1px solid var(--border); line-height:1.45; }
+.sum-block ul li:last-child { border-bottom:none; }
+.sum-block ul li::before { content:"•"; color:var(--red); flex-shrink:0; margin-top:.06em; }
+.sum-focus-body { padding:0.85rem 1.1rem; font-size:0.9rem; color:var(--text); line-height:1.6; }
+
+.sum-cta { display:flex; flex-direction:column; gap:0.5rem; }
+.btn-share {
+  padding:.85rem; background:transparent; color:var(--green); border:1px solid rgba(63,185,80,.28);
+  border-radius:var(--radius-md); font-size:.93rem; font-weight:600; cursor:pointer; font-family:inherit;
+  transition:all .13s;
+}
+.btn-share:hover { background:var(--green-dim); }
+.btn-new {
+  padding:.85rem; background:var(--red); color:#fff; border:none;
+  border-radius:var(--radius-md); font-size:.93rem; font-weight:600; cursor:pointer; font-family:inherit;
+  transition:background .13s; box-shadow:0 4px 18px rgba(229,83,75,.38);
+}
+.btn-new:hover { background:var(--red-hover); }
+.sum-loading { text-align:center; padding:4rem 1rem; color:var(--sub); font-size:.9rem; }
+#sum-error { color:var(--red); padding:1.5rem 0; font-size:.9rem; line-height:1.5; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SETUP
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="screen-setup" class="screen active">
+  <nav class="topnav">
+    <div class="nav-brand"><span class="nav-brand-dot">●</span> ToneTutor</div>
+    <div class="nav-spacer"></div>
+    <div class="nav-pill">🆓 Free · No account needed</div>
+  </nav>
+
+  <div class="setup-page">
+    <div class="setup-inner">
+
+      <div class="setup-hero">
+        <div class="hero-eyebrow">🎙 AI Mandarin Tutor</div>
+        <h1 class="hero-title">Speak <span class="hero-cjk">中文</span><br>with confidence</h1>
+        <p class="hero-desc">Real conversations with Lin Wei, your AI native speaker. Get instant tone feedback.</p>
+      </div>
+
+      <div class="config-card">
+        <div class="config-section">
+          <div class="config-label">Choose a scenario</div>
+          <div class="scenario-chips">
+            <div class="scenario-chip selected" data-type="topic" data-value="restaurant" role="radio" aria-checked="true">🍜 Restaurant</div>
+            <div class="scenario-chip" data-type="topic" data-value="shopping" role="radio" aria-checked="false">🛍️ Shopping</div>
+            <div class="scenario-chip" data-type="topic" data-value="travel" role="radio" aria-checked="false">✈️ Travel</div>
+            <div class="scenario-chip" data-type="topic" data-value="work" role="radio" aria-checked="false">💼 Work</div>
+            <div class="scenario-chip" data-type="topic" data-value="friends" role="radio" aria-checked="false">👋 Making Friends</div>
+            <div class="scenario-chip" data-type="topic" data-value="doctor" role="radio" aria-checked="false">🏥 Doctor</div>
+          </div>
+        </div>
+
+        <div class="config-section">
+          <div class="config-label">Your HSK level</div>
+          <div class="level-row">
+            <button class="level-btn" data-type="level" data-value="HSK1" role="radio" aria-checked="false">HSK 1</button>
+            <button class="level-btn selected" data-type="level" data-value="HSK2" role="radio" aria-checked="true">HSK 2</button>
+            <button class="level-btn" data-type="level" data-value="HSK3" role="radio" aria-checked="false">HSK 3</button>
+            <button class="level-btn" data-type="level" data-value="HSK4" role="radio" aria-checked="false">HSK 4</button>
+            <button class="level-btn" data-type="level" data-value="HSK5" role="radio" aria-checked="false">HSK 5</button>
+            <button class="level-btn" data-type="level" data-value="HSK6" role="radio" aria-checked="false">HSK 6</button>
+          </div>
+          <div class="level-desc" id="level-desc">Elementary — 300 words, simple daily sentences</div>
+        </div>
+
+        <div class="config-section">
+          <div class="cta-wrap">
+            <button class="btn-start" id="start-btn">Start Conversation →</button>
+            <span class="cta-note">Lin Wei will greet you in Mandarin</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     CHAT
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="screen-chat" class="screen">
+  <nav class="topnav">
+    <div class="nav-brand"><span class="nav-brand-dot">●</span> ToneTutor</div>
+    <div class="nav-sep"></div>
+    <div class="nav-context" id="chat-label">Restaurant · HSK2</div>
+    <div class="nav-spacer"></div>
+    <div class="nav-pill" id="turn-counter">0 turns</div>
+    <button class="nav-icon-btn" id="speak-toggle" onclick="toggleAutoSpeak()">🔊 Audio</button>
+    <button class="nav-icon-btn end" onclick="showSummary()">End Session</button>
+  </nav>
+
+  <div class="chat-content">
+    <div id="messages" role="log" aria-label="Conversation with Lin Wei"></div>
+  </div>
+
+  <div class="input-dock">
+    <div class="input-inner">
+      <div class="input-field-row">
+        <button id="mic-btn" onclick="startListening()" aria-label="Hold to speak in Mandarin">🎤</button>
+        <input id="user-input" type="text" placeholder="Type in Mandarin…" autocomplete="off" maxlength="200" aria-label="Your message"/>
+        <button id="send-btn" aria-label="Send">↑</button>
+      </div>
+      <div class="input-meta-row">
+        <div class="end-hint">Done? <button onclick="showSummary()">Get feedback →</button></div>
+        <div id="char-counter">0 / 200</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SUMMARY
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="screen-summary" class="screen">
+  <nav class="topnav">
+    <div class="nav-brand"><span class="nav-brand-dot">●</span> ToneTutor</div>
+    <div class="nav-sep"></div>
+    <div class="nav-context" id="sum-context">Session Summary</div>
+    <div class="nav-spacer"></div>
+    <button class="nav-icon-btn" onclick="location.reload()">← New session</button>
+  </nav>
+
+  <div class="summary-body">
+    <div id="sum-loading" class="sum-loading" style="display:none">Analysing your session…</div>
+
+    <div id="sum-content" style="display:none">
+      <div class="score-block">
+        <div class="score-ring-wrap">
+          <svg viewBox="0 0 120 120">
+            <circle class="score-ring-bg"   cx="60" cy="60" r="54"/>
+            <circle class="score-ring-fill" id="score-ring-fill" cx="60" cy="60" r="54"/>
+          </svg>
+          <div class="score-ring-num" id="sum-score">0</div>
+        </div>
+        <div class="score-label" id="sum-score-label">Overall score</div>
+      </div>
+
+      <div class="sum-block"><div class="sum-block-title">✅ Strengths</div><ul id="sum-strengths"></ul></div>
+      <div class="sum-block"><div class="sum-block-title">⚠️ Top mistakes</div><ul id="sum-mistakes"></ul></div>
+      <div class="sum-block"><div class="sum-block-title">📚 Vocab to review</div><ul id="sum-vocab"></ul></div>
+      <div class="sum-block"><div class="sum-block-title">🎯 Next focus</div><div class="sum-focus-body" id="sum-focus"></div></div>
+
+      <div class="sum-cta">
+        <button class="btn-share" onclick="shareScore()">📤 Share my score</button>
+        <button class="btn-new"   onclick="location.reload()">Start a new session</button>
+      </div>
+    </div>
+
+    <div id="sum-error"></div>
+  </div>
+</div>
+
+<script>
+const API = '';
+const state = { topic: 'restaurant', level: 'HSK2', sessionId: null };
+
+const LEVEL_DESCS = {
+  HSK1: 'Beginner — 150 words, very simple sentences only',
+  HSK2: 'Elementary — 300 words, simple daily sentences',
+  HSK3: 'Pre-intermediate — 600 words, most daily situations',
+  HSK4: 'Intermediate — 1,200 words, abstract topics',
+  HSK5: 'Upper-intermediate — 2,500 words, newspapers & films',
+  HSK6: 'Advanced — 5,000+ words, near-native fluency',
+};
+
+// ── Screens ──────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── Selection ────────────────────────────────────────────────────────────
+document.querySelectorAll('[data-type]').forEach(el => {
+  el.addEventListener('click', () => {
+    const type = el.dataset.type;
+    document.querySelectorAll(`[data-type="${type}"]`).forEach(b => {
+      b.classList.remove('selected'); b.setAttribute('aria-checked','false');
+    });
+    el.classList.add('selected'); el.setAttribute('aria-checked','true');
+    state[type] = el.dataset.value;
+    if (type === 'level') {
+      document.getElementById('level-desc').textContent = LEVEL_DESCS[state.level] || '';
+    }
+  });
+});
+
+// ── Start ─────────────────────────────────────────────────────────────────
+document.getElementById('start-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('start-btn');
+  btn.disabled = true; btn.textContent = 'Connecting to Lin Wei…';
+  try {
+    const res = await fetch(`${API}/api/session/start`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic: state.topic, level: state.level })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const d = await res.json();
+    state.sessionId = d.session_id;
+    document.getElementById('chat-label').textContent = `${cap(state.topic)} · ${state.level}`;
+    document.getElementById('turn-counter').textContent = '0 turns';
+    document.getElementById('messages').innerHTML = '';
+    showScreen('screen-chat');
+    appendLinWei(d.opening_zh, d.opening_pinyin, d.opening_en);
+    if (autoSpeak) speak(d.opening_zh);
+  } catch(e) {
+    alert('Could not start: ' + e.message);
+    btn.disabled = false; btn.textContent = 'Start Conversation →';
+  }
+});
+
+// ── TTS ──────────────────────────────────────────────────────────────────
+let autoSpeak = true, _audio = null;
+
+function _stopAudio() { if (_audio) { _audio.pause(); _audio = null; } }
+
+async function speak(text) {
+  if (!text) return;
+  _stopAudio();
+  const linMsgs = document.querySelectorAll('.msg.lin-wei');
+  const last = linMsgs.length ? linMsgs[linMsgs.length-1] : null;
+  if (last) last.classList.add('speaking');
+  try {
+    const res = await fetch(`${API}/api/tts`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text}) });
+    if (!res.ok) return;
+    const url = URL.createObjectURL(await res.blob());
+    _audio = new Audio(url);
+    _audio.onended = _audio.onerror = () => {
+      if(last) last.classList.remove('speaking');
+      URL.revokeObjectURL(url); _audio = null;
+    };
+    _audio.play();
+  } catch(_) { if(last) last.classList.remove('speaking'); }
+}
+
+function toggleAutoSpeak() {
+  autoSpeak = !autoSpeak;
+  const btn = document.getElementById('speak-toggle');
+  btn.textContent = autoSpeak ? '🔊 Audio' : '🔇 Muted';
+  btn.classList.toggle('muted', !autoSpeak);
+  if (!autoSpeak) _stopAudio();
+}
+
+// ── Send ─────────────────────────────────────────────────────────────────
+const uInput = document.getElementById('user-input');
+const charCtr = document.getElementById('char-counter');
+
+document.getElementById('send-btn').addEventListener('click', sendMessage);
+uInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+uInput.addEventListener('input', () => {
+  const n = uInput.value.length;
+  charCtr.textContent = `${n} / 200`;
+  charCtr.classList.toggle('warn', n >= 180);
+});
+
+async function sendMessage() {
+  const msg = uInput.value.trim();
+  if (!msg || !state.sessionId) return;
+  uInput.value = ''; charCtr.textContent = '0 / 200'; charCtr.classList.remove('warn');
+  appendLearner(msg);
+  const sendBtn = document.getElementById('send-btn');
+  const micBtn  = document.getElementById('mic-btn');
+  sendBtn.disabled = micBtn.disabled = true;
+  const loadEl = appendLoading();
+  try {
+    const res = await fetch(`${API}/api/chat`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ session_id: state.sessionId, user_message: msg })
+    });
+    loadEl.remove();
+    if (!res.ok) throw new Error(await res.text());
+    const d = await res.json();
+    const t = d.turn;
+    document.getElementById('turn-counter').textContent = `${t} turn${t!==1?'s':''}`;
+    appendLinWei(d.reply_zh, d.reply_pinyin, d.reply_en, d.grade);
+    if (autoSpeak) speak(d.reply_zh);
+  } catch(e) { loadEl.remove(); alert('Error: '+e.message); }
+  finally { sendBtn.disabled = micBtn.disabled = false; uInput.focus(); }
+}
+
+// ── Pinyin → tone marks ───────────────────────────────────────────────────
+function toToneMark(syl) {
+  const tone = parseInt(syl.slice(-1));
+  const base = (tone>=1&&tone<=4) ? syl.slice(0,-1) : syl.replace(/[1-5]$/,'');
+  if (!(tone>=1&&tone<=4)) return base;
+  const m = {a:'āáǎà',e:'ēéěè',i:'īíǐì',o:'ōóǒò',u:'ūúǔù',v:'ǖǘǚǜ','ü':'ǖǘǚǜ'};
+  if (base.includes('a')) return base.replace('a',m.a[tone-1]);
+  if (base.includes('e')) return base.replace('e',m.e[tone-1]);
+  if (base.includes('ou')) return base.replace('o',m.o[tone-1]);
+  for (let i=base.length-1;i>=0;i--) if(m[base[i]]) return base.slice(0,i)+m[base[i]][tone-1]+base.slice(i+1);
+  return base;
+}
+function buildRuby(zh, py) {
+  if (!py) { const s=document.createElement('span'); s.textContent=zh; return s; }
+  const syls = py.trim().split(/\s+/).map(toToneMark);
+  const isCJK = c => /[㐀-鿿豈-﫿]/u.test(c);
+  const ruby = document.createElement('ruby');
+  let si = 0;
+  [...zh].forEach(ch => {
+    ruby.appendChild(document.createTextNode(ch));
+    if (isCJK(ch) && si < syls.length) {
+      const rt = document.createElement('rt'); rt.textContent = syls[si++]; ruby.appendChild(rt);
+    }
+  });
+  return ruby;
+}
+
+// ── DOM builders ──────────────────────────────────────────────────────────
+function appendLinWei(zh, py, en, grade) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div'); div.className = 'msg lin-wei';
+
+  const who = document.createElement('div'); who.className = 'msg-who'; who.textContent = 'Lin Wei';
+  const bubble = document.createElement('div'); bubble.className = 'msg-bubble';
+  const zhEl = document.createElement('div'); zhEl.className = 'msg-zh'; zhEl.lang = 'zh-Hans';
+  zhEl.appendChild(buildRuby(zh, py));
+  const enEl = document.createElement('div'); enEl.className = 'msg-en'; enEl.textContent = en;
+  const rBtn = document.createElement('button'); rBtn.className = 'speak-btn';
+  rBtn.innerHTML = '🔊 Replay'; rBtn.onclick = () => speak(zh);
+  bubble.append(zhEl, enEl, rBtn);
+  div.append(who, bubble);
+
+  if (grade?.score != null) {
+    const bar = document.createElement('div'); bar.className = 'grade-bar';
+    if (grade.score === 10) {
+      const b = document.createElement('span'); b.className='perfect-badge'; b.textContent='🎉 Perfect!'; bar.appendChild(b);
+    }
+    const pill = document.createElement('span');
+    pill.className=`grade-pill ${grade.score>=8?'high':grade.score>=5?'mid':'low'}`;
+    pill.textContent=`${grade.score}/10`; bar.appendChild(pill);
+    if (grade.correct)         { const s=document.createElement('span'); s.className='grade-correct'; s.textContent='✅ '+grade.correct; bar.appendChild(s); }
+    if (grade.tone_errors?.length) { const s=document.createElement('span'); s.className='grade-error'; s.textContent='⚠️ '+grade.tone_errors.join(' · '); bar.appendChild(s); }
+    if (grade.suggestion)      { const s=document.createElement('span'); s.className='grade-suggestion'; s.textContent='💡 '+grade.suggestion; bar.appendChild(s); }
+    div.appendChild(bar);
+  }
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
+
+function appendLearner(text) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div'); div.className = 'msg learner';
+  const who = document.createElement('div'); who.className = 'msg-who'; who.textContent = 'You';
+  const bubble = document.createElement('div'); bubble.className = 'msg-bubble';
+  const zhEl = document.createElement('div'); zhEl.className = 'msg-zh'; zhEl.lang = 'zh-Hans'; zhEl.textContent = text;
+  bubble.appendChild(zhEl); div.append(who, bubble);
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
+
+function appendLoading() {
+  const msgs = document.getElementById('messages');
+  const wrap = document.createElement('div'); wrap.className = 'msg lin-wei';
+  const who = document.createElement('div'); who.className = 'msg-who'; who.textContent = 'Lin Wei';
+  const dots = document.createElement('div'); dots.className = 'typing-dots';
+  dots.setAttribute('aria-label','Lin Wei is typing');
+  dots.innerHTML = '<span></span><span></span><span></span>';
+  wrap.append(who, dots); msgs.appendChild(wrap); msgs.scrollTop = msgs.scrollHeight;
+  return wrap;
+}
+
+// ── Summary ───────────────────────────────────────────────────────────────
+async function showSummary() {
+  if (!state.sessionId) return;
+  showScreen('screen-summary');
+  document.getElementById('sum-context').textContent = `${cap(state.topic)} · ${state.level}`;
+  document.getElementById('sum-loading').style.display = 'block';
+  document.getElementById('sum-content').style.display = 'none';
+  document.getElementById('sum-error').textContent = '';
+  try {
+    const res = await fetch(`${API}/api/session/${state.sessionId}/summary`);
+    if (!res.ok) throw new Error(await res.text());
+    const d = await res.json();
+    document.getElementById('sum-score-label').textContent = `${cap(state.topic)} · ${state.level} session`;
+    fillList('sum-strengths', d.strengths);
+    fillList('sum-mistakes', d.top_mistakes);
+    fillList('sum-vocab', d.vocab_to_review);
+    document.getElementById('sum-focus').textContent = d.next_focus || '';
+    document.getElementById('sum-loading').style.display = 'none';
+    document.getElementById('sum-content').style.display = 'block';
+    animateScore(d.overall_score);
+    if (autoSpeak && d.next_focus) setTimeout(()=>speak(d.next_focus), 1000);
+  } catch(e) {
+    document.getElementById('sum-loading').style.display = 'none';
+    document.getElementById('sum-error').textContent = 'Error: ' + e.message;
+  }
+}
+
+function animateScore(target) {
+  const numEl = document.getElementById('sum-score'), ringEl = document.getElementById('score-ring-fill');
+  if (target === 0) { numEl.textContent = '0/10'; return; }
+  const color = target>=8 ? '#3FB950' : target>=5 ? '#D29922' : '#E5534B';
+  ringEl.style.stroke = numEl.style.color = color;
+  setTimeout(() => { ringEl.style.strokeDashoffset = 339 - (target/10)*339; }, 80);
+  let cur = 0;
+  const tick = () => { cur++; numEl.textContent=cur+'/10'; if(cur<target) requestAnimationFrame(tick); };
+  setTimeout(() => requestAnimationFrame(tick), 80);
+}
+
+function fillList(id, items) {
+  const el = document.getElementById(id); if (!el) return; el.innerHTML = '';
+  (items||[]).forEach(item => { const li=document.createElement('li'); li.textContent=item; el.appendChild(li); });
+}
+
+// ── Share ─────────────────────────────────────────────────────────────────
+function shareScore() {
+  const score = document.getElementById('sum-score').textContent;
+  const n = parseInt(score);
+  const t = `${n>=8?'🟢':n>=5?'🟡':'🔴'} I scored ${score} in my Mandarin ${state.topic} session on ToneTutor!\nhttps://tonetitor-346314536777.asia-southeast1.run.app`;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(t).then(() => {
+      const btn = document.querySelector('.btn-share'), orig=btn.textContent;
+      btn.textContent='✅ Copied to clipboard!'; setTimeout(()=>{btn.textContent=orig;},2500);
+    }).catch(()=>alert(t));
+  } else alert(t);
+}
+
+// ── Mic (Web Audio PCM capture — works on iOS Safari/Chrome, Android, desktop) ──
+let _audioCtx = null, _micStream = null, _micSource = null, _micProc = null;
+let _pcmChunks = [], _recording = false, _recTimer = null;
+const MAX_REC_MS = 60000; // hard cap so listening can never run forever
+
+async function startListening() {
+  const micBtn = document.getElementById('mic-btn');
+  if (_recording) { stopListening(); return; }
+  if (!navigator.mediaDevices?.getUserMedia) { alert('Microphone not supported — please type.'); return; }
+  try { _micStream = await navigator.mediaDevices.getUserMedia({ audio:true }); }
+  catch { alert('Microphone access denied. Allow microphone in browser settings.'); return; }
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    _audioCtx = new AC();
+    if (_audioCtx.state === 'suspended') await _audioCtx.resume();
+    _micSource = _audioCtx.createMediaStreamSource(_micStream);
+    _micProc = _audioCtx.createScriptProcessor(4096, 1, 1);
+    _pcmChunks = [];
+    _micProc.onaudioprocess = e => {
+      if (!_recording) return;
+      _pcmChunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+    };
+    _micSource.connect(_micProc);
+    _micProc.connect(_audioCtx.destination); // processor outputs silence — no feedback
+  } catch (err) {
+    _cleanupMic(); alert('Could not start recording: ' + err.message); return;
+  }
+  _recording = true;
+  _stopAudio();
+  micBtn.classList.add('recording'); micBtn.textContent='⏹'; micBtn.onclick = stopListening;
+  uInput.placeholder='Listening… tap ⏹ to stop'; uInput.disabled=true;
+  _recTimer = setTimeout(()=>{ if(_recording) stopListening(); }, MAX_REC_MS);
+}
+
+async function stopListening() {
+  if (!_recording) return;
+  _recording = false;
+  clearTimeout(_recTimer); _recTimer = null;
+  const micBtn = document.getElementById('mic-btn');
+  const sampleRate = _audioCtx ? _audioCtx.sampleRate : 48000;
+  const pcm16 = _encodePCM16(_pcmChunks);
+  _cleanupMic();
+  micBtn.classList.remove('recording'); micBtn.textContent='🎤'; micBtn.onclick = startListening;
+  if (pcm16.byteLength === 0) { uInput.placeholder='No speech detected — try again.'; uInput.disabled=false; return; }
+  uInput.placeholder='Transcribing…';
+  const form = new FormData();
+  form.append('audio', new Blob([pcm16], {type:'application/octet-stream'}), 'audio.pcm');
+  form.append('sample_rate', String(Math.round(sampleRate)));
+  try {
+    const res = await fetch(`${API}/api/transcribe`, { method:'POST', body:form });
+    if (!res.ok) throw new Error(await res.text());
+    const d = await res.json();
+    uInput.value = d.transcript||'';
+    uInput.placeholder = d.transcript ? 'Type in Mandarin…' : 'No speech detected — try again.';
+    if (d.transcript) { charCtr.textContent=`${d.transcript.length} / 200`; uInput.focus(); }
+  } catch(e) { alert('Transcription error: '+e.message); uInput.placeholder='Type in Mandarin…'; }
+  uInput.disabled = false;
+}
+
+function _cleanupMic() {
+  try { if (_micProc) { _micProc.disconnect(); _micProc.onaudioprocess = null; } } catch (e) {}
+  try { if (_micSource) _micSource.disconnect(); } catch (e) {}
+  try { if (_micStream) _micStream.getTracks().forEach(t=>t.stop()); } catch (e) {}
+  try { if (_audioCtx) _audioCtx.close(); } catch (e) {}
+  _micProc = _micSource = _micStream = _audioCtx = null;
+}
+
+// Flatten captured Float32 chunks into little-endian Int16 PCM (LINEAR16)
+function _encodePCM16(chunks) {
+  let len = 0; for (const c of chunks) len += c.length;
+  const out = new Int16Array(len);
+  let o = 0;
+  for (const c of chunks) {
+    for (let i = 0; i < c.length; i++) {
+      const s = Math.max(-1, Math.min(1, c[i]));
+      out[o++] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+  }
+  return out.buffer;
+}
+
+function cap(s) { return s.charAt(0).toUpperCase()+s.slice(1); }
+</script>
+</body>
+</html>

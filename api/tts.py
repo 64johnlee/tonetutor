@@ -1,0 +1,45 @@
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import Response
+from pydantic import BaseModel
+from google.cloud import texttospeech
+
+router = APIRouter(prefix="/api", tags=["tts"])
+
+_tts_client = None
+
+
+def _get_tts_client():
+    global _tts_client
+    if _tts_client is None:
+        _tts_client = texttospeech.TextToSpeechClient()
+    return _tts_client
+
+
+class TTSRequest(BaseModel):
+    text: str
+
+
+@router.post("/tts")
+async def synthesize_speech(req: TTSRequest):
+    if not req.text.strip():
+        raise HTTPException(status_code=400, detail="Empty text")
+
+    client = _get_tts_client()
+    synthesis_input = texttospeech.SynthesisInput(text=req.text)
+    voice = texttospeech.VoiceSelectionParams(
+        language_code="cmn-CN",
+        name="cmn-CN-Chirp3-HD-Aoede",  # Google's latest AI female Mandarin voice
+    )
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.MP3,
+        speaking_rate=0.9,
+    )
+
+    try:
+        response = client.synthesize_speech(
+            input=synthesis_input, voice=voice, audio_config=audio_config
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"TTS error: {str(e)}")
+
+    return Response(content=response.audio_content, media_type="audio/mpeg")
