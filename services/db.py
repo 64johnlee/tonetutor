@@ -1,6 +1,6 @@
 """Firestore-backed user access store (paid status + free-session counting).
 
-Only used when billing is enabled (STRIPE_SECRET_KEY set). Each user is keyed
+Only used when billing is enabled (LEMON_API_KEY set). Each user is keyed
 by an anonymous browser id (uid) stored in localStorage on the client.
 """
 from datetime import datetime
@@ -29,12 +29,15 @@ def get_status(uid: str) -> dict:
     }
 
 
-def mark_paid(uid: str, customer_id: str | None = None) -> None:
-    """Mark a uid as a paying subscriber (called from the Stripe webhook)."""
+def mark_paid(uid: str, provider_ref: str | None = None) -> None:
+    """Mark a uid as a paying subscriber (called from the billing webhook).
+
+    provider_ref is the billing provider's id (e.g. Lemon Squeezy subscription id).
+    """
     _client().collection("users").document(uid).set(
         {
             "paid": True,
-            "stripe_customer": customer_id,
+            "provider_ref": provider_ref,
             "updated_at": datetime.utcnow().isoformat(),
         },
         merge=True,

@@ -1,26 +1,36 @@
-"""Stripe billing: access check, subscription checkout, and webhook.
+"""Lemon Squeezy billing: access check, subscription checkout, and webhook.
 
-The paywall is OFF until STRIPE_SECRET_KEY is set, so the app runs fully free
-until billing is configured.
+Lemon Squeezy is a Merchant of Record — no company or local entity needed, it
+handles tax and pays out (e.g. via PayPal). The paywall is OFF until
+LEMON_API_KEY is set, so the app runs fully free until billing is configured.
 """
 import os
-import stripe
+import json
+import hmac
+import hashlib
+import httpx
 from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel
 from services.db import get_status, mark_paid, FREE_LIMIT
 
 router = APIRouter(prefix="/api", tags=["billing"])
 
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
-PRICE_ID = os.getenv("STRIPE_PRICE_ID", "")
-WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+LEMON_API_KEY = os.getenv("LEMON_API_KEY", "")
+LEMON_STORE_ID = os.getenv("LEMON_STORE_ID", "")
+LEMON_VARIANT_ID = os.getenv("LEMON_VARIANT_ID", "")
+LEMON_WEBHOOK_SECRET = os.getenv("LEMON_WEBHOOK_SECRET", "")
 BASE_URL = os.getenv(
     "PUBLIC_BASE_URL", "https://tonetitor-346314536777.asia-southeast1.run.app"
 ).rstrip("/")
 
+CHECKOUT_API = "https://api.lemonsqueezy.com/v1/checkouts"
+
+# Webhook events that grant access (subscription purchase confirmed)
+UNLOCK_EVENTS = {"subscription_created", "order_created"}
+
 
 def _billing_on() -> bool:
-    return bool(stripe.api_key)
+    return bool(LEMON_API_KEY)
 
 
 class CheckoutRequest(BaseModel):
@@ -41,41 +51,66 @@ async def access(uid: str = ""):
 
 @router.post("/checkout")
 async def create_checkout(req: CheckoutRequest):
-    """Create a Stripe Checkout session for the $5/mo subscription."""
-    if not _billing_on() or not PRICE_ID:
+    """Create a Lemon Squeezy hosted checkout for the $5/mo subscription."""
+    if not _billing_on() or not LEMON_STORE_ID or not LEMON_VARIANT_ID:
         raise HTTPException(status_code=503, detail="Billing not configured")
     if not req.uid:
         raise HTTPException(status_code=400, detail="Missing uid")
+    body = {
+        "data": {
+            "type": "checkouts",
+            "attributes": {
+                "checkout_data": {"custom": {"uid": req.uid}},
+                "product_options": {"redirect_url": f"{BASE_URL}/?paid=success"},
+            },
+            "relationships": {
+                "store": {"data": {"type": "stores", "id": str(LEMON_STORE_ID)}},
+                "variant": {"data": {"type": "variants", "id": str(LEMON_VARIANT_ID)}},
+            },
+        }
+    }
+    headers = {
+        "Authorization": f"Bearer {LEMON_API_KEY}",
+        "Accept": "application/vnd.api+json",
+        "Content-Type": "application/vnd.api+json",
+    }
     try:
-        session = stripe.checkout.Session.create(
-            mode="subscription",
-            line_items=[{"price": PRICE_ID, "quantity": 1}],
-            client_reference_id=req.uid,
-            success_url=f"{BASE_URL}/?paid=success",
-            cancel_url=f"{BASE_URL}/?paid=cancel",
-            allow_promotion_codes=True,
-        )
+        async with httpx.AsyncClient(timeout=20) as client:
+            r = await client.post(CHECKOUT_API, headers=headers, json=body)
+        if r.status_code >= 300:
+            raise HTTPException(status_code=502, detail=f"Lemon Squeezy error: {r.text}")
+        url = r.json()["data"]["attributes"]["url"]
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Stripe error: {e}")
-    return {"url": session.url}
+        raise HTTPException(status_code=502, detail=f"Checkout error: {e}")
+    return {"url": url}
 
 
 @router.post("/billing/webhook")
 async def webhook(request: Request):
-    """Stripe webhook — marks a uid paid on completed checkout."""
-    if not WEBHOOK_SECRET:
+    """Lemon Squeezy webhook — marks a uid paid on confirmed purchase.
+
+    Signature: HMAC-SHA256 hex of the raw body, keyed by the signing secret,
+    sent in the X-Signature header.
+    """
+    if not LEMON_WEBHOOK_SECRET:
         raise HTTPException(status_code=503, detail="Webhook not configured")
     payload = await request.body()
-    sig = request.headers.get("stripe-signature", "")
-    try:
-        event = stripe.Webhook.construct_event(payload, sig, WEBHOOK_SECRET)
-    except Exception:
+    sig = request.headers.get("x-signature", "")
+    expected = hmac.new(LEMON_WEBHOOK_SECRET.encode(), payload, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(expected, sig):
         raise HTTPException(status_code=400, detail="Invalid signature")
 
-    if event["type"] == "checkout.session.completed":
-        obj = event["data"]["object"]
-        uid = obj.get("client_reference_id")
+    try:
+        event = json.loads(payload)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid payload")
+
+    meta = event.get("meta", {})
+    if meta.get("event_name") in UNLOCK_EVENTS:
+        uid = (meta.get("custom_data") or {}).get("uid")
         if uid:
-            mark_paid(uid, obj.get("customer"))
+            mark_paid(uid, event.get("data", {}).get("id"))
 
     return {"received": True}

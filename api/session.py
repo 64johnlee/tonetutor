@@ -11,8 +11,8 @@ from .store import sessions
 
 router = APIRouter(prefix="/api/session", tags=["session"])
 
-# Paywall is off until Stripe is configured, so the app stays free until then.
-BILLING_ON = bool(os.getenv("STRIPE_SECRET_KEY"))
+# Paywall is off until Lemon Squeezy is configured, so the app stays free until then.
+BILLING_ON = bool(os.getenv("LEMON_API_KEY"))
 
 
 @router.post("/start", response_model=SessionStartResponse)
