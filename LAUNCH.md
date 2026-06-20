@@ -75,6 +75,30 @@
 
 ---
 
+## 🇷🇺 Russian (first localization — see GROWTH_HSK.md §6)
+*(Russian-speaking HSK learners are huge in Central Asia / CIS — dense Telegram groups, weak competition. Use the HSK version in HSK/CSC communities; use the travel version in China-travel communities. Hook matches their identity — never say "HSK" to travelers.)*
+
+### r/HSK / HSK & CSC communities
+**Title:** Носитель языка + актёр озвучки: сделал бесплатный тест разговорного китайского. Проверьте свой уровень HSK — и скажите, где он ошибается.
+*(EN: Native speaker + voice actor — I made a free spoken-Chinese test. Check your HSK level, and tell me where it's wrong.)*
+
+**One-liner:** Узнайте свой реальный уровень разговорного HSK за 3 минуты — бесплатно, результат сразу.
+
+**Body:**
+> Я носитель китайского и актёр озвучки. Почти все приложения гоняют карточки, но не проверяют, как ты реально говоришь — а именно там все застревают. Сделал тест: поговорите пару минут с ИИ — получите оценку уровня HSK, сильные стороны и над чем работать.
+>
+> Честно: автооценка произношения и тонов — сложная штука, я ей пока не до конца доверяю. Поэтому прошу: попробуйте её **сломать** (специально наделайте ошибок) и скажите, где она врёт. Бесплатно, 3 минуты: tonetutor.tefusiang.com
+
+### China-travel communities (NO "HSK" — match their identity)
+**Hook:** Скоро поездка в Китай? Проверьте за 3 минуты, сколько вы реально сможете сказать по-китайски — бесплатный тест: tonetutor.tefusiang.com
+*(EN: Going to China soon? Test in 3 min how much Chinese you can actually speak — free.)*
+
+**Shorter (comments):** Едете в Китай? Узнайте, на каком уровне ваш разговорный китайский — бесплатно, 3 минуты.
+
+> ⚠️ I can't verify Russian myself — have a native speaker eyeball it before a big push, or post once and watch the reception.
+
+---
+
 ## Demo clip (15–30s) — reused for X, Product Hunt, TikTok/IG/YT Shorts, and XPRIZE B-roll
 
 **Format:** vertical 9:16, screen-recording of the live app, ~30s master + a 15s trim.
