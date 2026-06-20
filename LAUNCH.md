@@ -114,6 +114,12 @@
 
 **Shorter (comments):** Работаете с Китаем? Узнайте, на каком уровне ваш разговорный китайский — бесплатно, 3 минуты.
 
+### Language-exchange communities / Discord (peer/helpful tone — HSK is fine here)
+**Hook:** Я носитель китайского, сделал бесплатный тест разговорного уровня (по шкале HSK): поговорите пару минут — получите свой уровень и слабые места. Потыкайте и скажите, точно ли оценивает? tonetutor.tefusiang.com
+*(EN: I'm a native Chinese speaker, made a free spoken-level test (HSK scale): chat a couple of minutes, get your level + weak spots. Try it and tell me if it scores accurately?)*
+
+**Shorter (chat):** Кто учит китайский — потыкайте мой бесплатный тест устного уровня и скажите, точно ли оценивает: tonetutor.tefusiang.com
+
 > ⚠️ I can't verify Russian myself — have a native speaker eyeball it before a big push, or post once and watch the reception.
 
 ---
