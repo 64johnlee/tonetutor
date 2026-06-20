@@ -79,7 +79,7 @@
 *(Russian-speaking HSK learners are huge in Central Asia / CIS — dense Telegram groups, weak competition. Use the HSK version in HSK/CSC communities; use the travel version in China-travel communities. Hook matches their identity — never say "HSK" to travelers.)*
 
 ### r/HSK / HSK & CSC communities
-**Title:** Носитель языка + актёр озвучки: сделал бесплатный тест разговорного китайского. Проверьте свой уровень HSK — и скажите, где он ошибается.
+**Title:** Носитель языка и актёр озвучки сделал бесплатный тест разговорного китайского. Проверьте свой HSK — и скажите, где он врёт.
 *(EN: Native speaker + voice actor — I made a free spoken-Chinese test. Check your HSK level, and tell me where it's wrong.)*
 
 **One-liner:** Узнайте свой реальный уровень разговорного HSK за 3 минуты — бесплатно, результат сразу.
@@ -95,11 +95,12 @@
 
 **Shorter (comments):** Едете в Китай? Узнайте, на каком уровне ваш разговорный китайский — бесплатно, 3 минуты.
 
-### C-drama / donghua fan communities (use "дорамы" — the fan word; NO "HSK")
-**Hook:** Смотрите китайские дорамы? А насколько хорошо вы реально говорите по-китайски? Узнайте за 3 минуты — бесплатно: tonetutor.tefusiang.com
-*(EN: Watch C-dramas? But how well can you actually speak Chinese? Find out in 3 min — free.)*
+### C-drama / donghua fan communities ("китайские дорамы / дунхуа" + ты; NO "HSK")
+*(Native-review fix: bare "дорамы" skews Korean in RU fan slang and misses donghua — name both, and use casual ты for this young audience.)*
+**Hook:** Смотришь китайские дорамы или дунхуа? А насколько хорошо ты реально говоришь по-китайски? Узнай за 3 минуты — бесплатно: tonetutor.tefusiang.com
+*(EN: Watch C-dramas or donghua? But how well can you actually speak Chinese? Find out in 3 min — free.)*
 
-**Shorter (comments):** Фанат(ка) китайских дорам? Узнай, на каком уровне твой разговорный китайский — бесплатно, 3 минуты.
+**Shorter (comments):** Фанат(ка) китайских дорам или дунхуа? Узнай, на каком уровне твой разговорный китайский — бесплатно, 3 минуты.
 
 ### Heritage learners (understand but can't speak; NO "HSK")
 **Hook:** Понимаете китайский, но не можете говорить? Проверьте свой уровень разговорного — за 3 минуты увидите, чего не хватает. Бесплатно: tonetutor.tefusiang.com
@@ -115,7 +116,7 @@
 **Shorter (comments):** Работаете с Китаем? Узнайте, на каком уровне ваш разговорный китайский — бесплатно, 3 минуты.
 
 ### Language-exchange communities / Discord (peer/helpful tone — HSK is fine here)
-**Hook:** Я носитель китайского, сделал бесплатный тест разговорного уровня (по шкале HSK): поговорите пару минут — получите свой уровень и слабые места. Потыкайте и скажите, точно ли оценивает? tonetutor.tefusiang.com
+**Hook:** Я носитель китайского, сделал бесплатный тест разговорного уровня (по шкале HSK): поговорите пару минут — получите свой уровень и слабые места. Потыкайте и скажите, точно ли он оценивает? tonetutor.tefusiang.com
 *(EN: I'm a native Chinese speaker, made a free spoken-level test (HSK scale): chat a couple of minutes, get your level + weak spots. Try it and tell me if it scores accurately?)*
 
 **Shorter (chat):** Кто учит китайский — потыкайте мой бесплатный тест устного уровня и скажите, точно ли оценивает: tonetutor.tefusiang.com
