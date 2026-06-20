@@ -89,6 +89,12 @@
 >
 > Честно: автооценка произношения и тонов — сложная штука, я ей пока не до конца доверяю. Поэтому прошу: попробуйте её **сломать** (специально наделайте ошибок) и скажите, где она врёт. Бесплатно, 3 минуты: tonetutor.tefusiang.com
 
+### CSC scholarship applicants (high-intent — HSK level is the gate; вы register)
+**Hook:** Подаёте на стипендию правительства Китая (CSC)? Проверьте за 3 минуты, дотягивает ли ваш разговорный китайский до HSK 4–5 — бесплатно: tonetutor.tefusiang.com
+*(EN: Applying for the Chinese Government Scholarship (CSC)? Test in 3 min whether your spoken Chinese reaches HSK 4–5 — free.)*
+
+**Shorter (comments):** Готовитесь к CSC? Узнайте, дотягивает ли ваш китайский до нужного HSK — бесплатно, 3 минуты.
+
 ### China-travel communities (NO "HSK" — match their identity)
 **Hook:** Скоро поездка в Китай? Проверьте за 3 минуты, сколько вы реально сможете сказать по-китайски — бесплатный тест: tonetutor.tefusiang.com
 *(EN: Going to China soon? Test in 3 min how much Chinese you can actually speak — free.)*
