@@ -106,6 +106,7 @@ def chat_turn(
     history: list[dict],
     user_message: str,
     opening_zh: str = "",
+    focus: str = "",
 ) -> dict:
     model = _get_model()
     scenario = TOPIC_DESCRIPTIONS[topic]
@@ -119,7 +120,12 @@ def chat_turn(
         history_lines.append(f"Lin Wei: {t['lin_wei']}")
     history_text = "\n".join(history_lines) if history_lines else "(start of conversation)"
 
-    prompt = SYSTEM_CHAT + "\n\n" + CHAT_PROMPT.format(
+    focus_note = (
+        f"\nThe learner is specifically working on these weak points: {focus}. "
+        "Naturally create chances for them to practise these, and pay extra attention to them when grading.\n"
+        if focus else ""
+    )
+    prompt = SYSTEM_CHAT + focus_note + "\n\n" + CHAT_PROMPT.format(
         scenario=scenario,
         level=lvl_desc,
         history=history_text,
@@ -161,4 +167,56 @@ def get_summary(history: list[dict]) -> dict:
         "top_mistakes": data.get("top_mistakes") or [],
         "vocab_to_review": data.get("vocab_to_review") or [],
         "next_focus": _safe_str(data, "next_focus", "Keep practising!"),
+    }
+
+
+ASSESS_PROMPT = """You are an experienced HSK examiner. Based ONLY on the LEARNER's Mandarin in this short practice conversation, estimate their spoken HSK level. Judge what the learner actually produced — grammar control, vocabulary range, sentence complexity, and accuracy. Lin Wei's lines are context only; do NOT grade them.
+
+Conversation:
+{history}
+
+Be encouraging but honest, and estimate conservatively from the evidence. If the learner barely produced any Mandarin, lean to a lower level and say the result is rough.
+
+Return ONLY this JSON (no markdown):
+{{
+  "estimated_level": "exactly one of: HSK 1, HSK 2, HSK 3, HSK 4, HSK 5, HSK 6",
+  "score": <integer 0-100, overall spoken-proficiency score>,
+  "headline": "one punchy sentence the learner can share, e.g. 'Your spoken Mandarin is a solid HSK 3 — strong grammar, watch your tones.'",
+  "strengths": ["up to 3 concrete strengths"],
+  "weaknesses": ["up to 3 concrete things to improve"],
+  "share_blurb": "a short first-person social caption, e.g. 'I just tested my Mandarin on ToneTutor and I speak at HSK 3 level! Test yours:'"
+}}"""
+
+_VALID_LEVELS = {"HSK 1", "HSK 2", "HSK 3", "HSK 4", "HSK 5", "HSK 6"}
+
+
+def get_level_assessment(history: list[dict]) -> dict:
+    model = _get_model()
+    history_text = "\n".join(
+        f"Learner: {t['learner']}\nLin Wei: {t['lin_wei']}"
+        for t in history
+    )
+    prompt = ASSESS_PROMPT.format(history=history_text)
+    response = model.generate_content(prompt, generation_config={"temperature": 0.3})
+    data = _parse_json(response.text)
+
+    level = _safe_str(data, "estimated_level", "HSK 1").strip()
+    if level not in _VALID_LEVELS:
+        # Normalise loose forms like "HSK3" / "hsk 3" → "HSK 3", else fall back.
+        digits = re.findall(r"[1-6]", level)
+        level = f"HSK {digits[0]}" if digits else "HSK 1"
+
+    try:
+        score = int(data.get("score", 50))
+    except (ValueError, TypeError):
+        score = 50
+    score = max(0, min(100, score))
+
+    return {
+        "estimated_level": level,
+        "score": score,
+        "headline": _safe_str(data, "headline", ""),
+        "strengths": data.get("strengths") or [],
+        "weaknesses": data.get("weaknesses") or [],
+        "share_blurb": _safe_str(data, "share_blurb", ""),
     }

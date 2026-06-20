@@ -23,6 +23,7 @@ async def chat(req: ChatRequest):
             history=sess["history"],
             user_message=req.user_message,
             opening_zh=sess.get("opening", ""),
+            focus=sess.get("focus", ""),
         )
     except ResourceExhausted:
         raise HTTPException(status_code=503, detail="Gemini API quota reached — please wait a minute and try again.")

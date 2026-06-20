@@ -18,54 +18,86 @@
 
 ---
 
-## Reddit — r/ChineseLanguage, r/LearnChinese
-*(Read each sub's rules; some require a "self-promo" flair or weekly thread.)*
+## Reddit — r/ChineseLanguage (post FIRST, tailor a separate one for r/LearnChinese later)
+*(⚠️ Check the sub rules + sidebar before posting: r/ChineseLanguage restricts self-promo — you may need a "Resources" flair, or to post in a weekly thread. Comment on a few threads in the days before so you're not a drive-by account. One tailored post per sub — never paste the same text in both.)*
 
-**Title:** I built an AI Mandarin tutor that grades your tones in real conversations — free to try, would love feedback
+**Title:** I'm a Mandarin voice actor — I built a tool that grades your tones in live conversation. Come tell me where it's wrong.
 
 **Body:**
-> Hi everyone — I'm a native Mandarin speaker and voice actor, and I got tired of apps that drill vocab but never fix the thing learners actually struggle with: **tones in real conversation.**
+> I'm a native Mandarin speaker and voice actor. The thing that always bugged me: apps drill vocab and isolated tone pairs, but nobody corrects your **tones in an actual back-and-forth conversation** — which is exactly where learners plateau and start sounding "off."
 >
-> So I built **ToneTutor**: pick a scenario (ordering food, travel, a work meeting…) and your HSK level, then have an actual back-and-forth with an AI native speaker. Every reply gets graded for **tone accuracy + grammar**, with pinyin and audio, and you get a session summary of mistakes + what to focus on.
+> So I built a thing to scratch that itch. You pick a scenario (ordering food, a job interview, travel) and your HSK level, then have a real conversation — speak or type — and every reply gets graded on **tone + grammar**, with pinyin and audio, plus a summary of what to drill next.
 >
-> It's free to try (3 full sessions). I'd genuinely love this community's feedback on whether the tone feedback feels accurate and useful — that's the part I care most about getting right.
+> Here's my actual ask: **I don't trust it yet, and you shouldn't either.** Automated tone grading is hard, and this community is the best stress-test on the planet. Go throw deliberately wrong tones at it, try edge cases, and tell me where the feedback is wrong or unhelpful. That's the part I need to get right before I'd ever claim it works.
 >
-> 👉 https://tonetutor.tefusiang.com
+> Free for 3 full conversations (there's a paid tier after, but I'm genuinely not here to sell — I want the accuracy verdict): https://tonetutor.tefusiang.com
 >
-> (Solo build; happy to explain how the tone grading works under the hood.)
+> Solo build, happy to explain how the tone grading works under the hood.
 
 ---
 
 ## Hacker News — Show HN
-**Title:** Show HN: ToneTutor – AI Mandarin tutor that grades your tones in real conversation
+*(⚠️ Per memory: HN was rate-limiting Show HNs from your new account — build a little comment karma first. HN rewards technical candor and punishes hype: no "AI-powered", say the model. Post a weekday morning ET.)*
+
+**Title:** Show HN: A Mandarin tutor that grades your tones in live conversation
 
 **Body:**
-> I'm a native Mandarin speaker + voice actor. Most language apps drill flashcards but never correct your tones in actual conversation, which is where learners fail. ToneTutor puts you in a scenario, you converse with a Gemini-powered native speaker, and each reply is graded for tone + grammar with pinyin and audio.
+> I'm a native Mandarin speaker and voice actor. Every app I tried drills flashcards and isolated tone pairs, but none correct your tones in an actual conversation — which is exactly where learners plateau and sound "off."
 >
-> Stack: FastAPI on Cloud Run, Gemini 2.5 Flash, Google STT/TTS. Free for 3 sessions.
+> ToneTutor drops you into a scenario (ordering food, a job interview), you converse by voice or text with Gemini playing a native speaker, and each reply is scored for tone + grammar with pinyin and audio, plus a summary of what to drill.
 >
-> https://tonetutor.tefusiang.com — feedback on the tone-grading accuracy especially welcome.
+> The hard part — and the part I'm least sure of — is the tone grading itself. Right now your speech hits Google Cloud STT (cmn-Hans-CN) for a transcript, then Gemini 2.5 Flash grades that transcript for tone + grammar and writes Lin Wei's reply in a single structured-JSON call. The honest limitation: it grades the *transcribed text*, not the raw pitch contour — so if you flub a tone but STT still maps it to the word you meant, the error can slip past. Extracting the actual F0/pitch contour and scoring it against the target tone shape is the obvious next step, and the part I haven't cracked reliably yet — ideas very welcome. I'd genuinely like HN to poke holes in it.
+>
+> Stack: FastAPI on Cloud Run, Gemini 2.5 Flash, Google STT/TTS. Free for 3 full conversations.
+>
+> https://tonetutor.tefusiang.com — feedback on tone-grading accuracy especially welcome.
 
 ---
 
 ## Product Hunt
+*(⚠️ Schedule for 12:01am PT — PH days reset on Pacific time and you want a full day to gather upvotes. Have the demo video/GIF ready; PH listings live or die on the thumbnail + first comment. Line up a few people to genuinely try it early.)*
 - **Name:** ToneTutor
-- **Tagline:** Practice Mandarin conversations with an AI that grades your tones
-- **Description:** ToneTutor lets you have real Mandarin conversations with an AI native speaker. Pick a scenario and HSK level, speak or type, and get instant tone + grammar feedback with pinyin and audio. Built by a native-speaker voice actor.
-- **First comment (maker):** Hi PH! I'm a bilingual Mandarin speaker + voice actor. Tones are where learners struggle most, yet apps ignore them in real conversation. ToneTutor fixes that. Try it free (3 sessions) and tell me if the tone feedback is accurate — that's what I'm obsessing over.
+- **Tagline (≤60 chars):** Mandarin conversation practice that grades your tones
+- **Description:** Hold real Mandarin conversations with an AI native speaker. Pick a scenario and your HSK level, speak or type, and get instant tone + grammar feedback with pinyin and audio — plus a summary of what to drill next. Built by a native-speaker voice actor.
+- **First comment (maker):** Hi PH 👋 I'm a bilingual Mandarin speaker and voice actor. Tones are where learners struggle most, yet almost every app ignores them in *live* conversation — so I built ToneTutor to scratch that itch. Honest ask: automated tone grading is hard and I'm still proving out the accuracy, so please **try to break it** — throw deliberately wrong tones at it and tell me where the feedback is off. Free for 3 full conversations. That accuracy verdict is the whole thing I'm obsessing over.
 
 ---
 
 ## 小红书 / Bilibili / RED (leverage your native-speaker angle)
+*(⚠️ 小红书 suppresses posts with external links in the body — put the URL in your profile 简介 and write “主页链接” in the caption, or share it only when people comment/DM. Lead with a real personal-share tone, not an ad — RED's algorithm favors 真实分享.)*
+
 **Caption (zh):**
-> 我是母语普通话老师+配音演员,做了一个 AI 中文口语练习工具 ToneTutor:选场景(点餐、旅游、面试…)和 HSK 等级,跟 AI 母语者真实对话,每句都会纠正你的**声调**和语法,带拼音和真人发音。前 3 次免费。帮我看看声调反馈准不准👇 https://tonetutor.tefusiang.com
-> #学中文 #普通话 #对外汉语 #AI工具
+> 母语普通话+配音演员,自己动手做了个 AI 中文口语练习工具。选场景(点餐、面试、旅游)和 HSK 等级,跟 AI 真实对话,每句话都会给你的**声调**和语法打分,带拼音和真人发音,练完还有错误总结。
+>
+> 说实话,声调评分这块我自己还没完全放心,所以特别想请大家来「找茬」:故意说错声调、上点难度,看看它判得准不准,哪里不对一定告诉我🙏 前 3 次免费。
+>
+> (链接放主页简介里了~) #学中文 #普通话 #对外汉语 #AI工具 #语言学习
 
 ---
 
-## TikTok / Instagram / YouTube Shorts (demo video idea)
-15–30s screen recording: pick "Restaurant · HSK2" → speak a line → show the tone grade popping up → end card "Try free: tonetutor.tefusiang.com".
-**Caption:** POV: an AI finally tells you your tones are wrong (so you can fix them). Free Mandarin conversation practice → tonetutor.tefusiang.com #LearnChinese #Mandarin #languagelearning #HSK
+## Demo clip (15–30s) — reused for X, Product Hunt, TikTok/IG/YT Shorts, and XPRIZE B-roll
+
+**Format:** vertical 9:16, screen-recording of the live app, ~30s master + a 15s trim.
+**Mute-first:** burn in captions — assume no sound. Real spoken Mandarin audio is your moat (native voice actor), so DO keep a clean audio track for sound-on viewers.
+**The one rule:** the tone-correction moment (a *wrong* tone caught + fixed) is the whole video — get to it fast and make it unmissable (zoom + a soft "ding" + color flip red→green).
+
+### 30s master — shot by shot
+| Time | Visual | Burned-in caption | Audio |
+|------|--------|-------------------|-------|
+| 0:00–0:02 | Cold open on the chat UI, big text slams in | **"Your vocab is fine. Your tones aren't."** | beat / whoosh |
+| 0:02–0:05 | Tap scenario **"Restaurant"** + **"HSK 2"** | "Pick a scene + your level." | tap clicks |
+| 0:05–0:08 | Tap mic, speak a line (waveform animates) — **deliberately flub one tone** | "Just talk." | your real voice saying the line |
+| 0:08–0:14 | **MONEY SHOT** — reply card grades it; one tone flagged **red** with the correction + pinyin. Zoom in. | **"It caught the one tone I got wrong."** | soft "ding" |
+| 0:14–0:19 | Lin Wei replies (speaker icon pulsing, plays audio); you redo the line, grade flips **green** | "Fix it. Hear it. Lock it in." | AI reply audio + success chime |
+| 0:19–0:24 | Session-summary card slides up (mistakes + what to drill) | "End-of-session report card." | light swell |
+| 0:24–0:30 | END CARD: logo + URL | **"Practice free → tonetutor.tefusiang.com"** · small: "built by a native-speaker voice actor" | music resolves |
+
+### 15s trim (for X tweet-1 + fast Shorts)
+0:00–0:02 hook → **0:02–0:08 the money shot** (mic → red tone caught, this is the star) → 0:08–0:11 green fix → 0:11–0:15 end card. Drop the scenario-pick and summary beats.
+
+**Production notes:** record at the device's full res then crop to 9:16; hide any debug/URL bars; do 2–3 takes of the spoken line so the flub-then-fix reads clearly; keep total cuts snappy (nothing longer than ~3s on screen).
+
+**Caption (social):** POV: an AI finally tells you *which* Mandarin tone you got wrong — in a real conversation, so you can actually fix it. Free to try 👉 tonetutor.tefusiang.com #LearnChinese #Mandarin #languagelearning #HSK #对外汉语
 
 ---
 
@@ -89,10 +121,14 @@
 ---
 
 ## X / Twitter (thread)
-1/ I'm a native Mandarin speaker + voice actor. I built an AI that grades your Chinese tones in real conversation. Here's why tones break learners 🧵
-2/ Apps drill vocab but never correct your tones when you actually speak. So learners plateau sounding "off." ToneTutor fixes that.
-3/ Pick a scenario + HSK level → converse with an AI native speaker → every reply graded for tone + grammar, with pinyin + audio.
-4/ Free to try (3 sessions): https://tonetutor.tefusiang.com — tell me if the tone feedback is accurate.
+*(⚠️ Put the link in a REPLY, not tweet 1 — X throttles reach on posts with external links. Attach the 15–30s demo clip to tweet 1; video is what stops the scroll. Tweet 1 is everything — it decides if anyone reads the rest.)*
+
+1/ I'm a Mandarin voice actor — I can hear the exact moment a learner's tone slips. Most apps never catch it, because they drill flashcards, not conversation. So I built something that grades your tones *while you actually talk.* 🧵
+2/ The gap: you can ace HSK vocab and still sound "off," because nobody corrects your tones in a real back-and-forth. That's where learners plateau for years.
+3/ How it works: pick a scenario (ordering food, a job interview) + your HSK level → have a real conversation by voice or text → every reply gets scored on tone + grammar, with pinyin, audio, and a summary of what to drill.
+4/ The honest part: automated tone grading is hard, and I don't fully trust mine yet. I want people to *try to break it* — throw wrong tones at it and tell me where it's off.
+5/ Free for 3 full conversations — link below 👇 Tell me if the tone feedback is actually accurate. That's the whole thing I'm trying to get right.
+↳ (reply) https://tonetutor.tefusiang.com
 
 ---
 
@@ -101,3 +137,44 @@
 - Watch Lemon Squeezy revenue + conversion (XPRIZE needs revenue evidence)
 - Reply to every comment/DM; iterate on feedback
 - A few real paying users + testimonials beats a thousand silent free signups
+
+---
+
+# 📅 Dated Launch Schedule
+
+**Anchor:** XPRIZE "Build with Gemini" deadline = **Aug 17, 2026**. Today = Jun 20, 2026.
+**"A" = the day the Lemon Squeezy store clears human review** (payments go live). Launch sequence is offset from A because we must NOT drive traffic before checkout works — a launch-day conversion lost to test mode is the one thing XPRIZE can't replace.
+
+## Track A — Prep NOW (Jun 20 →, not blocked by LS review)
+Do all of this *while* waiting on approval so that A+0 is a one-click go.
+| Date | Task | Why |
+|------|------|-----|
+| Jun 20–21 | Record the **15–30s demo clip** (Restaurant · HSK2 → speak a line → tone grade pops → end card) | Hard dependency for X + Product Hunt + Shorts |
+| Jun 20–24 | **Warm the HN account** — leave genuine comments on AI/language/Show HN threads | Memory: HN rate-limits Show HNs from new accounts |
+| Jun 20–24 | **Warm Reddit** — comment in r/ChineseLanguage + r/LearnChinese; read each sub's self-promo rules/flair | Avoid drive-by-account removal |
+| Jun 21 | Write the **HN `[USER: …]` technical line** (how tone grading works + fails) | HN's first question = your credibility |
+| Jun 22 | Stand up a **feedback channel** (reply email or simple form) | Capture testimonials = XPRIZE evidence |
+| Jun 22 | Put the tonetutor URL in your **小红书 profile bio** | RED throttles in-body links |
+| On approval (A) | **Walk the full real-money flow once**: 3 free → paywall → checkout → unlock | Never launch on an unverified live checkout |
+
+## Track B — Launch sequence (offset from approval day A)
+Pick an **A that lands on a weekday** you can sit at the keyboard ~3 hrs. Stagger = one channel at a time so you can reply to every comment (the algorithm + trust driver).
+| Day | Channel | Notes |
+|-----|---------|-------|
+| **A+0** | **Reddit — r/ChineseLanguage** | Highest-intent niche, lowest barrier. Post mid-morning their time; reply to every comment all day. |
+| **A+1** | **小红书** (+ keep replying to Reddit) | Low-effort, link in bio. |
+| **A+2** | **Show HN** | *Only if karma built.* Weekday morning ET; sit on it all day. |
+| **A+3** | **Reddit — r/LearnChinese** (separately tailored) + start the **X thread** | Don't reuse the r/ChineseLanguage text. |
+| **A+5** | **Product Hunt** | Schedule 12:01am PT; rally a few early genuine testers; reply all day. |
+| **A+6 →** | **Shorts (TikTok/IG/YT)** + **university outreach emails** (rolling) | Evergreen; repeat best-performing. |
+
+→ Whole sequence fits in ~1 week. Target **A no later than early July** so revenue + testimonials have 5–6 weeks to accumulate before the submission window.
+
+## Track C — XPRIZE submission runway (fixed dates)
+| By date | Task |
+|---------|------|
+| Continuous | Collect testimonials + screenshots; track LS revenue & conversion rate |
+| **Aug 3** | Draft the **500–1000 word narrative**; script + record the **3-min submission video** |
+| **Aug 10** | Finalize all submission assets; do a **dry-run** of the Devpost/XPRIZE form |
+| **Aug 15** | **Submit (2 days early)** — never trust deadline-day uploads |
+| Aug 17 | XPRIZE deadline (hard) |

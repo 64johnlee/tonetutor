@@ -44,6 +44,7 @@ class StartSessionRequest(BaseModel):
     topic: Topic
     level: HskLevel = HskLevel.hsk2
     uid: Optional[str] = None
+    focus: Optional[str] = None    # weak points to target this session (from a level test)
 
 
 class ChatRequest(BaseModel):
@@ -84,3 +85,14 @@ class SessionStartResponse(BaseModel):
     opening_en: str
     topic: str
     level: str
+
+
+class LevelAssessment(BaseModel):
+    session_id: str
+    estimated_level: str          # e.g. "HSK 3"
+    score: int                    # 0-100 spoken-proficiency score
+    headline: str                 # one-line shareable verdict
+    strengths: list[str]
+    weaknesses: list[str]
+    share_blurb: str              # ready-to-post first-person caption
+    turns: int

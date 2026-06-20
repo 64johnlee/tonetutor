@@ -305,6 +305,20 @@ html, body {
 .btn-new:hover { background:var(--red-hover); }
 .sum-loading { text-align:center; padding:4rem 1rem; color:var(--sub); font-size:.9rem; }
 #sum-error { color:var(--red); padding:1.5rem 0; font-size:.9rem; line-height:1.5; }
+
+/* Secondary CTA — Test my level */
+.btn-test {
+  width:100%; padding:.8rem; background:transparent; color:var(--text);
+  border:1.5px solid var(--border-hi); border-radius:var(--radius-md);
+  font-size:.95rem; font-weight:700; cursor:pointer; font-family:inherit; transition:all .14s;
+}
+.btn-test:hover { border-color:var(--red); color:var(--red); }
+.btn-test:disabled { opacity:.5; cursor:not-allowed; }
+
+/* Assessment / shareable level card screen */
+.assess-body { max-width:480px; margin:0 auto; padding:1.5rem 1.5rem 3rem; display:flex; flex-direction:column; gap:1rem; flex:1; }
+.card-img { width:100%; max-width:360px; margin:0 auto; display:block; border-radius:var(--radius-lg); border:1px solid var(--border); box-shadow:0 12px 44px rgba(0,0,0,.45); }
+.assess-actions { display:flex; flex-direction:column; gap:.5rem; max-width:360px; margin:0 auto; width:100%; }
 </style>
 </head>
 <body>
@@ -357,6 +371,7 @@ html, body {
         <div class="config-section">
           <div class="cta-wrap">
             <button class="btn-start" id="start-btn">Start Conversation →</button>
+            <button class="btn-test" id="test-btn">🎯 Test my HSK level — free</button>
             <span class="cta-note">Lin Wei will greet you in Mandarin</span>
             <div id="free-badge" class="cta-note" style="display:none;margin-top:.4rem;font-weight:600;color:var(--amber)"></div>
           </div>
@@ -378,7 +393,7 @@ html, body {
     <div class="nav-spacer"></div>
     <div class="nav-pill" id="turn-counter">0 turns</div>
     <button class="nav-icon-btn" id="speak-toggle" onclick="toggleAutoSpeak()">🔊 Audio</button>
-    <button class="nav-icon-btn end" onclick="showSummary()">End Session</button>
+    <button class="nav-icon-btn end" id="end-btn" onclick="endSession()">End Session</button>
   </nav>
 
   <div class="chat-content">
@@ -393,7 +408,7 @@ html, body {
         <button id="send-btn" aria-label="Send">↑</button>
       </div>
       <div class="input-meta-row">
-        <div class="end-hint">Done? <button onclick="showSummary()">Get feedback →</button></div>
+        <div class="end-hint"><span id="end-hint-lead">Done? </span><button id="end-hint-btn" onclick="endSession()">Get feedback →</button></div>
         <div id="char-counter">0 / 200</div>
       </div>
     </div>
@@ -442,9 +457,37 @@ html, body {
   </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════════════════
+     ASSESSMENT (shareable HSK level card)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div id="screen-assessment" class="screen">
+  <nav class="topnav">
+    <div class="nav-brand"><span class="nav-brand-dot">●</span> ToneTutor</div>
+    <div class="nav-sep"></div>
+    <div class="nav-context">Your HSK level</div>
+    <div class="nav-spacer"></div>
+    <button class="nav-icon-btn" onclick="location.reload()">← New test</button>
+  </nav>
+
+  <div class="assess-body">
+    <div id="assess-loading" class="sum-loading">Scoring your Mandarin…</div>
+    <div id="assess-content" style="display:none">
+      <img id="card-img" class="card-img" alt="My HSK speaking level"/>
+      <div class="assess-actions">
+        <button class="btn-new" onclick="shareCard()">📤 Share my result</button>
+        <button class="btn-share" onclick="saveCard()">📥 Save image</button>
+        <button class="btn-share" id="copy-btn" onclick="copyCaption()">📋 Copy caption</button>
+        <button class="btn-share" onclick="practiceWeakPoints()">🎯 Practice my weak points →</button>
+      </div>
+    </div>
+    <div id="assess-error" style="color:var(--red);padding:1.5rem 0;font-size:.9rem;line-height:1.5"></div>
+  </div>
+</div>
+
 <script>
 const API = '';
-const state = { topic: 'restaurant', level: 'HSK2', sessionId: null };
+const SHARE_URL = 'https://tonetutor.tefusiang.com';
+const state = { topic: 'restaurant', level: 'HSK2', sessionId: null, mode: 'practice' };
 
 // ── Billing / access ────────────────────────────────────────────────────────
 function getUid() {
@@ -539,30 +582,62 @@ document.querySelectorAll('[data-type]').forEach(el => {
 });
 
 // ── Start ─────────────────────────────────────────────────────────────────
-document.getElementById('start-btn').addEventListener('click', async () => {
-  const btn = document.getElementById('start-btn');
-  btn.disabled = true; btn.textContent = 'Connecting to Lin Wei…';
+const START_LABELS = { practice: 'Start Conversation →', assess: '🎯 Test my HSK level — free' };
+
+async function beginSession(mode, focus) {
+  state.mode = mode;
+  state.focus = focus || null;
+  const btn = document.getElementById(mode === 'assess' ? 'test-btn' : 'start-btn');
+  const other = document.getElementById(mode === 'assess' ? 'start-btn' : 'test-btn');
+  btn.disabled = other.disabled = true;
+  btn.textContent = mode === 'assess' ? 'Starting your test…' : 'Connecting to Lin Wei…';
   try {
     const res = await fetch(`${API}/api/session/start`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ topic: state.topic, level: state.level, uid: getUid() })
+      body: JSON.stringify({ topic: state.topic, level: state.level, uid: getUid(), focus: state.focus })
     });
-    if (res.status === 402) { btn.disabled = false; btn.textContent = 'Start Conversation →'; showPaywall(); return; }
+    if (res.status === 402) { resetStartBtns(); showPaywall(); return; }
     if (!res.ok) throw new Error(await res.text());
     const d = await res.json();
     refreshAccess();
     state.sessionId = d.session_id;
-    document.getElementById('chat-label').textContent = `${cap(state.topic)} · ${state.level}`;
+    document.getElementById('chat-label').textContent =
+      mode === 'assess' ? `Level test · target ${state.level}` : `${cap(state.topic)} · ${state.level}`;
     document.getElementById('turn-counter').textContent = '0 turns';
     document.getElementById('messages').innerHTML = '';
+    applyChatModeUI(mode);
     showScreen('screen-chat');
     appendLinWei(d.opening_zh, d.opening_pinyin, d.opening_en);
     if (autoSpeak) speak(d.opening_zh);
   } catch(e) {
     alert('Could not start: ' + e.message);
-    btn.disabled = false; btn.textContent = 'Start Conversation →';
+    resetStartBtns();
   }
-});
+}
+
+function resetStartBtns() {
+  const s = document.getElementById('start-btn'), t = document.getElementById('test-btn');
+  s.disabled = t.disabled = false;
+  s.textContent = START_LABELS.practice; t.textContent = START_LABELS.assess;
+}
+
+function applyChatModeUI(mode) {
+  const endBtn = document.getElementById('end-btn');
+  const hintBtn = document.getElementById('end-hint-btn');
+  const hintLead = document.getElementById('end-hint-lead');
+  if (mode === 'assess') {
+    endBtn.textContent = 'See my level →';
+    hintBtn.textContent = 'See my level →';
+    hintLead.textContent = 'Chatted a few lines? ';
+  } else {
+    endBtn.textContent = 'End Session';
+    hintBtn.textContent = 'Get feedback →';
+    hintLead.textContent = 'Done? ';
+  }
+}
+
+document.getElementById('start-btn').addEventListener('click', () => beginSession('practice'));
+document.getElementById('test-btn').addEventListener('click', () => beginSession('assess'));
 
 // ── TTS ──────────────────────────────────────────────────────────────────
 let autoSpeak = true, _audio = null;
@@ -759,13 +834,139 @@ function fillList(id, items) {
 function shareScore() {
   const score = document.getElementById('sum-score').textContent;
   const n = parseInt(score);
-  const t = `${n>=8?'🟢':n>=5?'🟡':'🔴'} I scored ${score} in my Mandarin ${state.topic} session on ToneTutor!\nhttps://tonetitor-346314536777.asia-southeast1.run.app`;
+  const t = `${n>=8?'🟢':n>=5?'🟡':'🔴'} I scored ${score} in my Mandarin ${state.topic} session on ToneTutor!\n${SHARE_URL}`;
   if (navigator.clipboard) {
     navigator.clipboard.writeText(t).then(() => {
       const btn = document.querySelector('.btn-share'), orig=btn.textContent;
       btn.textContent='✅ Copied to clipboard!'; setTimeout(()=>{btn.textContent=orig;},2500);
     }).catch(()=>alert(t));
   } else alert(t);
+}
+
+// ── Assessment / shareable level card ──────────────────────────────────────
+function endSession() { if (state.mode === 'assess') showAssessment(); else showSummary(); }
+
+let _lastAssessment = null, _cardDataUrl = null;
+
+async function showAssessment() {
+  if (!state.sessionId) return;
+  showScreen('screen-assessment');
+  document.getElementById('assess-loading').style.display = 'block';
+  document.getElementById('assess-content').style.display = 'none';
+  document.getElementById('assess-error').textContent = '';
+  try {
+    const res = await fetch(`${API}/api/session/${state.sessionId}/assessment`);
+    if (!res.ok) throw new Error(await res.text());
+    const d = await res.json();
+    _lastAssessment = d;
+    try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(_) {}
+    _cardDataUrl = renderScoreCard(d);
+    document.getElementById('card-img').src = _cardDataUrl;
+    document.getElementById('assess-loading').style.display = 'none';
+    document.getElementById('assess-content').style.display = 'block';
+  } catch(e) {
+    document.getElementById('assess-loading').style.display = 'none';
+    document.getElementById('assess-error').textContent = 'Error: ' + e.message;
+  }
+}
+
+function _wrapLines(ctx, text, maxW) {
+  const out = [];
+  (text || '').split(/\s+/).forEach(word => {
+    if (!word) return;
+    const cur = out.length ? out[out.length - 1] : null;
+    if (cur && ctx.measureText(cur + ' ' + word).width <= maxW) { out[out.length - 1] = cur + ' ' + word; return; }
+    if (ctx.measureText(word).width <= maxW) { out.push(word); return; }
+    let chunk = '';                                  // word wider than line (e.g. CJK run) → break by char
+    for (const ch of word) {
+      if (chunk && ctx.measureText(chunk + ch).width > maxW) { out.push(chunk); chunk = ch; }
+      else chunk += ch;
+    }
+    if (chunk) out.push(chunk);
+  });
+  return out;
+}
+
+function renderScoreCard(d) {
+  const W = 1080, H = 1350, P = 90;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const x = c.getContext('2d');
+  const g = x.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#0D1117'); g.addColorStop(1, '#161B22');
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  x.fillStyle = '#E5534B'; x.fillRect(0, 0, W, 16);
+  x.textBaseline = 'top';
+
+  x.font = '700 46px Inter, sans-serif';
+  x.fillStyle = '#E5534B'; x.fillText('●', P, 96);
+  x.fillStyle = '#E6EDF3'; x.fillText('   ToneTutor', P, 96);
+
+  x.font = '700 34px Inter, sans-serif'; x.fillStyle = '#7D8590';
+  x.fillText('MY HSK SPEAKING LEVEL', P, 232);
+
+  x.font = '800 200px Inter, sans-serif'; x.fillStyle = '#E5534B';
+  x.fillText(d.estimated_level || 'HSK ?', P - 4, 300);
+
+  x.font = '700 56px Inter, sans-serif'; x.fillStyle = '#E6EDF3';
+  x.fillText(`${d.score}/100`, P, 560);
+  x.font = '500 36px Inter, sans-serif'; x.fillStyle = '#7D8590';
+  x.fillText('spoken proficiency', P + 250, 578);
+
+  let y = 700;
+  x.font = '600 44px Inter, sans-serif'; x.fillStyle = '#E6EDF3';
+  _wrapLines(x, d.headline || '', W - P * 2).slice(0, 3).forEach(line => { x.fillText(line, P, y); y += 60; });
+
+  const weak = (d.weaknesses || []).slice(0, 2);
+  if (weak.length) {
+    y += 30;
+    x.font = '700 30px Inter, sans-serif'; x.fillStyle = '#D29922';
+    x.fillText('WORK ON', P, y); y += 50;
+    x.font = '500 38px Inter, sans-serif'; x.fillStyle = '#E6EDF3';
+    weak.forEach(w => _wrapLines(x, '•  ' + w, W - P * 2).forEach(line => { x.fillText(line, P, y); y += 50; }));
+  }
+
+  x.fillStyle = '#E5534B'; x.fillRect(P, H - 200, W - P * 2, 4);
+  x.font = '700 40px Inter, sans-serif'; x.fillStyle = '#E6EDF3';
+  x.fillText('Test your Mandarin free', P, H - 165);
+  x.font = '600 38px Inter, sans-serif'; x.fillStyle = '#E5534B';
+  x.fillText('tonetutor.tefusiang.com', P, H - 110);
+
+  return c.toDataURL('image/png');
+}
+
+function practiceWeakPoints() {
+  const w = (_lastAssessment && _lastAssessment.weaknesses) || [];
+  beginSession('practice', w.join('; '));   // seed a targeted practice session with the test's weak points
+}
+
+function saveCard() {
+  if (!_cardDataUrl) return;
+  const a = document.createElement('a');
+  a.href = _cardDataUrl; a.download = 'my-hsk-level.png';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+async function shareCard() {
+  const caption = ((_lastAssessment && _lastAssessment.share_blurb) || 'I tested my Mandarin on ToneTutor!') + ' ' + SHARE_URL;
+  try {
+    if (_cardDataUrl && navigator.canShare) {
+      const blob = await (await fetch(_cardDataUrl)).blob();
+      const file = new File([blob], 'my-hsk-level.png', { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: caption }); return; }
+    }
+    if (navigator.share) { await navigator.share({ text: caption, url: SHARE_URL }); return; }
+  } catch(_) { return; }   // user cancelled or share failed → stop quietly
+  copyCaption();           // no native share available → fall back to copy
+}
+
+function copyCaption() {
+  const caption = ((_lastAssessment && _lastAssessment.share_blurb) || '') + ' ' + SHARE_URL;
+  const btn = document.getElementById('copy-btn');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(caption).then(() => {
+      if (btn) { const o = btn.textContent; btn.textContent = '✅ Copied!'; setTimeout(() => { btn.textContent = o; }, 2200); }
+    }).catch(() => alert(caption));
+  } else alert(caption);
 }
 
 // ── Mic (Web Audio PCM capture — works on iOS Safari/Chrome, Android, desktop) ──
