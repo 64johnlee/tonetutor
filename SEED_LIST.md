@@ -6,6 +6,31 @@
 
 ---
 
+## 0. 需求触发点地图(反向工程:人为什么会突然想说中文)
+
+**核心逻辑:** 不去大海捞针打广告,而是倒推"是什么事让一个人需要说中文",再去他们**已经聚集**的地方。关键:**钩子要贴他的身份,不是你的产品词**——对旅行者别说"测你的 HSK",他不知道也不在乎。
+
+> ⚠️ **不是"信息投放"(=广播=被秒删封号),是"价值先行 + 成绩卡自传播":** 你以社区成员身份分享一个免费自测、**先晒自己的成绩卡做示范**,让用户自己转发那张卡。一个真实用户晒的卡 > 一百条你发的广告。
+
+| 触发点 | 真实社区(用前确认) | 意图 | 定制钩子 |
+|---|---|---|---|
+| **备考 HSK 本身** | 见 §1 / §2(r/HSK、HSK 群) | 🔥🔥🔥 | "你的口语到几级了?免费 3 分钟测" |
+| **留学中国 / CSC 奖学金** | 见 §3 / §5(CSC 群、Study-in-China) | 🔥🔥🔥 | "申 CSC 前,先测你口语够不够 HSK4/5" |
+| **计划去中国旅行** | r/travelchina · r/China(reddit.com/r/China)· Fodor's China 论坛(fodors.com/community)· r/IWantOut | 🔥🔥 | "去中国前,测测你真能开口说多少中文" |
+| **追 C-drama / 国漫 / C-pop** | r/CDrama(reddit.com/r/CDrama)· r/donghua · Viki 社区(viki.com)· FB「Can watching c-dramas help learn chinese」(facebook.com/groups/789991209703607) | 🔥 | "追剧追了这么久,你的中文口语到几级了?" |
+| **有中国伴侣/家人(传承)** | r/ABCDesis · r/Cantonese · ChinesePod 社区(chinesepod.com/community)· Speaking of China 论坛 | 🔥🔥 | "听得懂、说不出?测测你的口语等级,看差在哪" |
+| **在华工作 / 对华做生意** | r/chinalife(reddit.com/r/chinalife)· r/China · r/Expat | 🔥🔥 | "在中国生活/谈事,先测你的中文够不够用" |
+| **跨触发:语言交换大池** | Discord **中英交流**(discord.com/invite/c-e,7.6万人)· Migaku Chinese(migaku.com)· Sinolands · GoEast 服务器(goeastmandarin.com/chinese-language-discord-server) | 🔥🔥 | "我做了个免费 HSK 口语自测,帮我看看准不准"(互助语气) |
+
+**找更多池子的配方:** Discord 用 **DISBOARD** 目录(disboard.org/servers/tag/chinese-learning、/tag/mandarin);Reddit 用搜索 "learn Chinese" / "speak Mandarin" 找到相关 sub 后看侧栏的 related communities。
+
+**打法顺序(别贪多):**
+1. **先打高意图**(备考 HSK + CSC 奖学金)—— 转化最快,见 §1–§5。
+2. **Phase 2 放大器 = 邻接大池里竞争对手忽略的 2 个**:**中国旅行** + **C-drama 追剧**(池子大、易进、对手没盯)。每个池子先潜水、用它的语言晒一次成绩卡,再扩。
+3. 同一产品,**七种开场白**——千万别在旅行群里说 HSK,在追剧群里说 HSK。
+
+---
+
 ## 1. Reddit —— 最高意图、门槛最低(先打这里)
 发帖前先在每个 sub 评论几条养号,看清自推规则/flair。一个 sub 一个**定制**帖,别复制粘贴。
 
