@@ -108,6 +108,12 @@
 **Shorter (comments):** Всё понимаете, но не говорите? Узнайте свой уровень разговорного китайского — бесплатно, 3 минуты.
 *(Note: Russian-speaking heritage Chinese is a niche overlap — lower priority than the HSK/travel/C-drama pools, but ready if you find such a community.)*
 
+### Expats in China / China business (NO "HSK" — practical framing)
+**Hook:** Живёте или работаете в Китае? Проверьте за 3 минуты, хватает ли вашего разговорного китайского для реальной жизни — бесплатно: tonetutor.tefusiang.com
+*(EN: Living or working in China? Test in 3 min whether your spoken Chinese is enough for real life — free.)*
+
+**Shorter (comments):** Работаете с Китаем? Узнайте, на каком уровне ваш разговорный китайский — бесплатно, 3 минуты.
+
 > ⚠️ I can't verify Russian myself — have a native speaker eyeball it before a big push, or post once and watch the reception.
 
 ---
