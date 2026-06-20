@@ -101,6 +101,13 @@
 
 **Shorter (comments):** Фанат(ка) китайских дорам? Узнай, на каком уровне твой разговорный китайский — бесплатно, 3 минуты.
 
+### Heritage learners (understand but can't speak; NO "HSK")
+**Hook:** Понимаете китайский, но не можете говорить? Проверьте свой уровень разговорного — за 3 минуты увидите, чего не хватает. Бесплатно: tonetutor.tefusiang.com
+*(EN: Understand Chinese but can't speak it? Check your spoken level — in 3 min see what's missing. Free.)*
+
+**Shorter (comments):** Всё понимаете, но не говорите? Узнайте свой уровень разговорного китайского — бесплатно, 3 минуты.
+*(Note: Russian-speaking heritage Chinese is a niche overlap — lower priority than the HSK/travel/C-drama pools, but ready if you find such a community.)*
+
 > ⚠️ I can't verify Russian myself — have a native speaker eyeball it before a big push, or post once and watch the reception.
 
 ---
