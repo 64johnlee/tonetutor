@@ -95,6 +95,12 @@
 
 **Shorter (comments):** Едете в Китай? Узнайте, на каком уровне ваш разговорный китайский — бесплатно, 3 минуты.
 
+### C-drama / donghua fan communities (use "дорамы" — the fan word; NO "HSK")
+**Hook:** Смотрите китайские дорамы? А насколько хорошо вы реально говорите по-китайски? Узнайте за 3 минуты — бесплатно: tonetutor.tefusiang.com
+*(EN: Watch C-dramas? But how well can you actually speak Chinese? Find out in 3 min — free.)*
+
+**Shorter (comments):** Фанат(ка) китайских дорам? Узнай, на каком уровне твой разговорный китайский — бесплатно, 3 минуты.
+
 > ⚠️ I can't verify Russian myself — have a native speaker eyeball it before a big push, or post once and watch the reception.
 
 ---
