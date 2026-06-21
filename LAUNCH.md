@@ -131,6 +131,19 @@
 
 ---
 
+## 🇮🇩 Indonesian (second-localization candidate — see GROWTH_HSK.md §6)
+*(Only push hard once Russian proves localization lifts share rate. Indonesia has huge China-travel + Mandarin-learning audiences. Casual "kamu" register fits travel/social pools.)*
+
+### China-travel communities (NO "HSK" — match their identity)
+**Hook:** Mau ke China? Cek dalam 3 menit seberapa banyak bahasa Mandarin yang benar-benar bisa kamu ucapkan — gratis: tonetutor.tefusiang.com
+*(EN: Going to China? Check in 3 min how much Mandarin you can actually speak — free.)*
+
+**Shorter (comments):** Rencana ke China? Tes seberapa lancar bahasa Mandarin lisanmu — gratis, 3 menit.
+
+> ⚠️ I can't verify Indonesian myself — have a native speaker eyeball it before a big push.
+
+---
+
 ## Demo clip (15–30s) — reused for X, Product Hunt, TikTok/IG/YT Shorts, and XPRIZE B-roll
 
 **Format:** vertical 9:16, screen-recording of the live app, ~30s master + a 15s trim.
