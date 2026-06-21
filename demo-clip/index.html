@@ -1,0 +1,248 @@
+<!doctype html>
+<!--
+  ════════════════════════════════════════════════════════════════════════
+  ToneTutor — 30s vertical demo clip (SKELETON / placeholder pattern)
+  Shot list baked from tonetitor/LAUNCH.md "Demo clip".
+
+  HOW TO FINISH IT (swap-in workflow):
+  1. Screen-record the live app on your phone for each beat (Restaurant·HSK2
+     → speak a line → tone graded red → redo → green → summary).
+  2. For each scene, replace the placeholder box (div.screen-ph) with a MUTED
+     video clip element — exact snippet + data-* timing are in README.md.
+  3. Add voiceover + a soft "ding" + success chime + bed music as separate
+     audio elements — snippets + track indices in README.md.
+  4. Captions, timing, color-flip, and end card are already done — keep them.
+  (Media snippets live in README.md, NOT inline here, so the linter doesn't try
+   to load not-yet-existing files.)
+  Preview:  cd demo-clip && npm run dev      Render:  npm run render
+  ════════════════════════════════════════════════════════════════════════
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: #0D1117; }
+      body { font-family: "Inter", sans-serif; color: #E6EDF3; }
+
+      #root { position: relative; width: 1080px; height: 1920px;
+              background: radial-gradient(120% 80% at 50% 0%, #161B22 0%, #0D1117 70%); }
+
+      /* Each scene is a full-frame layer; the timeline crossfades opacity. */
+      .scene { position: absolute; inset: 0; opacity: 0;
+               display: flex; flex-direction: column; align-items: center;
+               justify-content: center; padding: 120px 90px; gap: 70px; }
+
+      .accent { color: #E5534B; }
+      .green  { color: #3FB950; }
+      .amber  { color: #D29922; }
+      .muted  { color: #7D8590; }
+
+      /* ── Phone mock + placeholder screen-clip slot ── */
+      .phone { width: 660px; height: 940px; border-radius: 64px;
+               background: linear-gradient(180deg, #0D1117, #161B22);
+               border: 3px solid #21262D; box-shadow: 0 40px 120px rgba(0,0,0,.55);
+               display: flex; align-items: center; justify-content: center;
+               overflow: hidden; position: relative; }
+      .screen-ph { width: 100%; height: 100%;
+                   border: 4px dashed #2D333B; border-radius: 60px;
+                   display: flex; flex-direction: column; align-items: center;
+                   justify-content: center; gap: 26px; text-align: center; padding: 60px; }
+      .screen-ph .tag { font-size: 30px; font-weight: 700; color: #7D8590;
+                        letter-spacing: 2px; }
+      .screen-ph .desc { font-size: 34px; font-weight: 600; color: #E6EDF3; line-height: 1.35; }
+
+      /* ── Captions ── */
+      .caption { text-align: center; font-weight: 800; line-height: 1.08;
+                 max-width: 880px; }
+      .cap-xl { font-size: 96px; }
+      .cap-lg { font-size: 78px; }
+
+      /* ── Scene 1 cold open ── */
+      #s1 { justify-content: center; }
+      #s1 .cap-xl { font-size: 110px; }
+
+      /* ── Money-shot tone chip (S4 red / S5 green) ── */
+      .chip { display: inline-flex; align-items: center; gap: 22px;
+              padding: 30px 46px; border-radius: 28px; font-weight: 800;
+              font-size: 50px; border: 3px solid; }
+      .chip.bad  { color: #E5534B; border-color: #E5534B; background: rgba(229,83,75,.12); }
+      .chip.good { color: #3FB950; border-color: #3FB950; background: rgba(63,185,80,.12); }
+      .chip .mark { font-size: 56px; }
+      .chip .pinyin { font-size: 38px; font-weight: 600; }
+      .chip .pinyin s { color: #7D8590; }
+
+      .pulse-ring { position: absolute; width: 360px; height: 360px; border-radius: 50%;
+                    border: 6px solid #3FB950; opacity: 0; }
+
+      /* ── Summary report card (S6) ── */
+      .report { width: 660px; background: #161B22; border: 3px solid #21262D;
+                border-radius: 40px; padding: 56px; display: flex; flex-direction: column;
+                align-items: center; gap: 30px; }
+      .ring { width: 230px; height: 230px; border-radius: 50%;
+              border: 16px solid #21262D; border-top-color: #3FB950;
+              display: flex; align-items: center; justify-content: center;
+              font-size: 78px; font-weight: 800; color: #3FB950; transform: rotate(-45deg); }
+      .ring span { transform: rotate(45deg); }
+      .report .row { width: 100%; font-size: 36px; font-weight: 600; color: #E6EDF3;
+                     display: flex; gap: 18px; align-items: flex-start; text-align: left; }
+      .report .row .b { color: #D29922; }
+
+      /* ── End card (S7) ── */
+      #s7 { gap: 40px; }
+      .logo { font-size: 64px; font-weight: 800; }
+      .logo .dot { color: #E5534B; }
+      .end-url { font-size: 76px; font-weight: 800; color: #E5534B; }
+      .end-cta { font-size: 56px; font-weight: 700; color: #E6EDF3; }
+      .end-sub { font-size: 34px; font-weight: 500; color: #7D8590; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="30"
+         data-width="1080" data-height="1920">
+
+      <!-- ───────────── SCENE 1 · 0:00–0:02 · cold open ───────────── -->
+      <div id="s1" class="scene">
+        <div class="caption cap-xl">Your vocab is fine.<br /><span class="accent">Your tones aren't.</span></div>
+      </div>
+
+      <!-- ───────────── SCENE 2 · 0:02–0:05 · pick scene + level ───────────── -->
+      <div id="s2" class="scene">
+        <div class="phone">
+          <!-- SWAP: screen-record tapping "Restaurant" + "HSK 2" -->
+          <div class="screen-ph">
+            <div class="tag">▶ SCREEN CLIP</div>
+            <div class="desc">Tap <span class="accent">🍜 Restaurant</span><br />+ <span class="accent">HSK 2</span></div>
+          </div>
+        </div>
+        <div class="caption cap-lg">Pick a scene + your level.</div>
+      </div>
+
+      <!-- ───────────── SCENE 3 · 0:05–0:08 · just talk ───────────── -->
+      <div id="s3" class="scene">
+        <div class="phone">
+          <!-- SWAP: screen-record tapping mic + speaking (waveform animates) -->
+          <div class="screen-ph">
+            <div class="tag">▶ SCREEN CLIP</div>
+            <div class="desc">🎤 Tap &amp; speak a line<br /><span class="muted">(flub one tone on purpose)</span></div>
+          </div>
+        </div>
+        <div class="caption cap-lg">Just talk.</div>
+      </div>
+
+      <!-- ───────────── SCENE 4 · 0:08–0:14 · MONEY SHOT (tone caught) ───────────── -->
+      <div id="s4" class="scene">
+        <div class="phone">
+          <!-- SWAP: screen-record the reply card grading; this chip mirrors the red flag -->
+          <div class="screen-ph">
+            <div class="tag">▶ SCREEN CLIP · reply card</div>
+            <div id="s4-chip" class="chip bad">
+              <span class="mark">✗</span>
+              <span class="pinyin"><s>shì 是</s> → shí 十</span>
+            </div>
+          </div>
+        </div>
+        <div class="caption cap-lg">It caught the <span class="accent">one tone</span> I got wrong.</div>
+      </div>
+
+      <!-- ───────────── SCENE 5 · 0:14–0:19 · fix it, hear it, lock it ───────────── -->
+      <div id="s5" class="scene">
+        <div class="phone">
+          <!-- SWAP: screen-record redo → grade flips green, Lin Wei audio plays -->
+          <div class="screen-ph">
+            <div class="tag">▶ SCREEN CLIP · redo</div>
+            <span class="pulse-ring" id="s5-ring"></span>
+            <div id="s5-chip" class="chip good">
+              <span class="mark">✓</span>
+              <span class="pinyin">shí 十</span>
+            </div>
+          </div>
+        </div>
+        <div class="caption cap-lg"><span class="green">Fix it.</span> Hear it. Lock it in.</div>
+      </div>
+
+      <!-- ───────────── SCENE 6 · 0:19–0:24 · report card ───────────── -->
+      <div id="s6" class="scene">
+        <div class="report" id="s6-card">
+          <div class="ring"><span>8<span style="font-size:40px">/10</span></span></div>
+          <div class="row"><span class="b">WORK ON</span></div>
+          <div class="row">• Third tone before third tone (tone sandhi)</div>
+          <div class="row">• Neutral tone on sentence-final 了</div>
+        </div>
+        <div class="caption cap-lg">End-of-session report card.</div>
+      </div>
+
+      <!-- ───────────── SCENE 7 · 0:24–0:30 · end card ───────────── -->
+      <div id="s7" class="scene">
+        <div class="logo" id="s7-logo"><span class="dot">●</span> ToneTutor</div>
+        <div class="end-cta" id="s7-cta">Practice free →</div>
+        <div class="end-url" id="s7-url">tonetutor.tefusiang.com</div>
+        <div class="end-sub" id="s7-sub">built by a native-speaker voice actor</div>
+      </div>
+
+    </div>
+
+    <script>
+      window.__timelines = window.__timelines || {};
+      const tl = gsap.timeline({ paused: true });
+
+      // Scene windows (seconds): [start, end]
+      // S1 0-2 · S2 2-5 · S3 5-8 · S4 8-14 · S5 14-19 · S6 19-24 · S7 24-30
+      const XF = 0.45; // crossfade duration
+
+      // Crossfade helper: fade a scene IN at t; the previous scene fades OUT into it.
+      function fadeIn(sel, t)  { tl.to(sel, { opacity: 1, duration: XF, ease: "power1.inOut" }, t); }
+      function fadeOut(sel, t) { tl.to(sel, { opacity: 0, duration: XF, ease: "power1.inOut" }, t); }
+
+      // S1 — cold open from black, text slams in
+      fadeIn("#s1", 0);
+      tl.from("#s1 .caption", { scale: 0.82, y: 40, duration: 0.6, ease: "back.out(1.7)" }, 0.12);
+
+      // S1 → S2
+      fadeOut("#s1", 1.8); fadeIn("#s2", 1.85);
+      tl.from("#s2 .phone", { y: 70, duration: 0.55, ease: "power3.out" }, 2.05);
+      tl.from("#s2 .caption", { y: 36, opacity: 0, duration: 0.45, ease: "expo.out" }, 2.25);
+
+      // S2 → S3
+      fadeOut("#s2", 4.8); fadeIn("#s3", 4.85);
+      tl.from("#s3 .phone", { scale: 0.9, duration: 0.5, ease: "power2.out" }, 5.05);
+      tl.from("#s3 .caption", { y: 36, opacity: 0, duration: 0.45, ease: "back.out(1.5)" }, 5.25);
+
+      // S3 → S4 — MONEY SHOT: zoom in, chip pops red (the "ding")
+      fadeOut("#s3", 7.8); fadeIn("#s4", 7.85);
+      tl.from("#s4 .phone", { scale: 0.86, duration: 0.6, ease: "power3.out" }, 8.0);
+      tl.from("#s4-chip", { scale: 0, duration: 0.5, ease: "back.out(2.2)" }, 8.55);
+      tl.to("#s4-chip", { scale: 1.14, duration: 0.16, ease: "power2.out", yoyo: true, repeat: 1 }, 9.05); // ding pop
+      tl.from("#s4 .caption", { y: 40, opacity: 0, duration: 0.5, ease: "expo.out" }, 9.2);
+      tl.to("#s4 .phone", { scale: 1.06, duration: 3.0, ease: "power1.inOut" }, 9.6); // slow push-in
+
+      // S4 → S5 — flip to green fix, success ring pulse
+      fadeOut("#s4", 13.8); fadeIn("#s5", 13.85);
+      tl.from("#s5-chip", { scale: 0, duration: 0.45, ease: "back.out(2)" }, 14.1);
+      tl.fromTo("#s5-ring", { scale: 0.4, opacity: 0.9 },
+                { scale: 1.6, opacity: 0, duration: 0.9, ease: "power2.out" }, 14.2);
+      tl.from("#s5 .caption", { y: 38, opacity: 0, duration: 0.5, ease: "power3.out" }, 14.5);
+
+      // S5 → S6 — report card slides up
+      fadeOut("#s5", 18.8); fadeIn("#s6", 18.85);
+      tl.from("#s6-card", { y: 90, duration: 0.6, ease: "power3.out" }, 19.05);
+      tl.from("#s6-card .row", { x: -24, opacity: 0, duration: 0.4, ease: "power2.out", stagger: 0.12 }, 19.4);
+      tl.from("#s6 .caption", { y: 36, opacity: 0, duration: 0.45, ease: "expo.out" }, 19.5);
+
+      // S6 → S7 — end card
+      fadeOut("#s6", 23.8); fadeIn("#s7", 23.85);
+      tl.from("#s7-logo", { y: 40, opacity: 0, duration: 0.5, ease: "power3.out" }, 24.1);
+      tl.from("#s7-cta", { y: 30, opacity: 0, duration: 0.45, ease: "power2.out" }, 24.35);
+      tl.from("#s7-url", { scale: 0.8, opacity: 0, duration: 0.55, ease: "back.out(1.8)" }, 24.55);
+      tl.from("#s7-sub", { opacity: 0, duration: 0.5, ease: "power1.out" }, 24.95);
+      // Final scene only: gentle settle-out at the very end
+      tl.to("#s7", { opacity: 0, duration: 0.5, ease: "power1.in" }, 29.5);
+
+      window.__timelines["main"] = tl;
+    </script>
+    <!-- Audio + video swap-in snippets are in README.md (kept out of this file
+         so the linter doesn't try to load not-yet-existing media). -->
+  </body>
+</html>
