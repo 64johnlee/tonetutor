@@ -916,16 +916,31 @@ function renderScoreCard(d) {
   x.font = '600 44px Inter, sans-serif'; x.fillStyle = '#E6EDF3';
   _wrapLines(x, d.headline || '', W - P * 2).slice(0, 3).forEach(line => { x.fillText(line, P, y); y += 60; });
 
+  const FOOTER_TOP = H - 200;          // red divider line — content must never cross this
+  const SAFE_BOTTOM = FOOTER_TOP - 28; // breathing gap so text descenders never touch the footer
+
   const weak = (d.weaknesses || []).slice(0, 2);
-  if (weak.length) {
+  if (weak.length && y + 50 < SAFE_BOTTOM) {   // only open the section if there's room for the header + ≥1 line
     y += 30;
     x.font = '700 30px Inter, sans-serif'; x.fillStyle = '#D29922';
     x.fillText('WORK ON', P, y); y += 50;
     x.font = '500 38px Inter, sans-serif'; x.fillStyle = '#E6EDF3';
-    weak.forEach(w => _wrapLines(x, '•  ' + w, W - P * 2).forEach(line => { x.fillText(line, P, y); y += 50; }));
+    const lineH = 50;
+    let lines = [];
+    weak.forEach(w => _wrapLines(x, '•  ' + w, W - P * 2).forEach(l => lines.push(l)));
+    const maxLines = Math.max(0, Math.floor((SAFE_BOTTOM - y) / lineH));
+    if (lines.length > maxLines) {             // would overflow the footer → truncate with an ellipsis
+      lines = lines.slice(0, maxLines);
+      if (lines.length) {
+        let last = lines[lines.length - 1];
+        while (last && x.measureText(last + '…').width > W - P * 2) last = last.slice(0, -1);
+        lines[lines.length - 1] = last + '…';
+      }
+    }
+    lines.forEach(line => { x.fillText(line, P, y); y += lineH; });
   }
 
-  x.fillStyle = '#E5534B'; x.fillRect(P, H - 200, W - P * 2, 4);
+  x.fillStyle = '#E5534B'; x.fillRect(P, FOOTER_TOP, W - P * 2, 4);
   x.font = '700 40px Inter, sans-serif'; x.fillStyle = '#E6EDF3';
   x.fillText('Test your Mandarin free', P, H - 165);
   x.font = '600 38px Inter, sans-serif'; x.fillStyle = '#E5534B';

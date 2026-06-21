@@ -46,6 +46,8 @@ Conversation so far:
 
 Learner's latest message: "{user_message}"
 
+Note: the learner's message may come from speech recognition and can contain mis-hearings (near-homophones or nonsensical substitutions). If an apparent error looks like a likely speech-recognition mistake rather than a genuine learner error, do NOT count it as a tone or grammar mistake.
+
 Grade the learner's message and continue the conversation naturally.
 
 Return ONLY this JSON (no markdown):
@@ -174,6 +176,8 @@ ASSESS_PROMPT = """You are an experienced HSK examiner. Based ONLY on the LEARNE
 
 Conversation:
 {history}
+
+Important: the learner's lines may come from automatic speech recognition and can contain transcription errors (near-homophones or nonsensical fragments). Do NOT penalise the learner for words that are clearly speech-recognition mis-hearings rather than their own mistakes, and do NOT quote nonsensical mis-transcribed fragments as evidence of weaknesses. Judge their level from the overall meaning and structure they were clearly trying to produce.
 
 Be encouraging but honest, and estimate conservatively from the evidence. If the learner barely produced any Mandarin, lean to a lower level and say the result is rough.
 
