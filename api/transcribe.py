@@ -1,7 +1,13 @@
+import logging
+
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from google.cloud import speech
 
 router = APIRouter(prefix="/api", tags=["transcribe"])
+
+# uvicorn.error is configured with an INFO handler under uvicorn (our Cloud Run
+# entrypoint), so these STT diagnostics reliably land in Cloud Run logs.
+logger = logging.getLogger("uvicorn.error")
 
 _speech_client = None
 
@@ -46,7 +52,9 @@ async def transcribe_audio(
         # never hard-fails — i.e. no regression vs. the previous behaviour.
         try:
             response = client.recognize(config=_build_config("latest_long"), audio=audio_obj)
-        except Exception:
+            logger.info("STT served by model=latest_long")
+        except Exception as model_err:
+            logger.warning("STT latest_long unavailable (%s); fell back to default model", model_err)
             response = client.recognize(config=_build_config(None), audio=audio_obj)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Transcription error: {str(e)}")
