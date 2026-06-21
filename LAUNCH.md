@@ -36,6 +36,24 @@
 
 ---
 
+## Reddit — r/HSK (tailored to the self-test feature, NOT the conversation-grading pitch above)
+*(⚠️ r/HSK is small + exam-focused — comment on a few threads first so you're not a drive-by account, check the sidebar for self-promo/flair rules, and post ONE tailored post. Lead with the free self-test, not the product. The honest "spoken-level estimate, not pitch analysis" disclaimer is load-bearing here — this crowd knows their real level and will catch overclaiming.)*
+
+**Title:** I built a free 3-minute spoken-HSK self-test (native speaker + voice actor) — come tell me where the level estimate is wrong.
+
+**Body:**
+> I'm a native Mandarin speaker and voice actor. HSK tells you your reading/listening level, but there's no quick way to gauge where your **spoken** level actually sits — and that's the part that's hardest to self-assess.
+>
+> So I built a free self-test: you have a short voice (or text) conversation with an AI native speaker for ~3 minutes, and it estimates your spoken HSK level (1–6) with a 0–100 score, your strengths, and your weak points — then hands you a shareable score card.
+>
+> Honest disclaimer for this crowd specifically: it grades the *transcript* of what you say (speech → text → Gemini), **not** the raw pitch contour — so it's a spoken-level **estimate, not a pitch-accurate tone analyzer** (real F0 tone analysis is the next thing I'm building). That's exactly why I'm posting here: you all know your real HSK level, so please run it and tell me — did the estimate match where you actually are? Where did it over- or under-rate you?
+>
+> Free, no signup: https://tonetutor.tefusiang.com (tap "🎯 Test my HSK level — free")
+>
+> Solo build — happy to explain how the level estimate works under the hood.
+
+---
+
 ## Hacker News — Show HN
 *(⚠️ Per memory: HN was rate-limiting Show HNs from your new account — build a little comment karma first. HN rewards technical candor and punishes hype: no "AI-powered", say the model. Post a weekday morning ET.)*
 
