@@ -499,6 +499,19 @@ function getUid() {
   }
   return id;
 }
+
+// ── Funnel analytics (GROWTH_HSK.md §10) — fire-and-forget, never blocks UX ──
+function track(event, props) {
+  try {
+    const body = JSON.stringify({ event, uid: getUid(), props: props || {} });
+    // sendBeacon survives the page unload / checkout redirect; fetch keepalive is the fallback.
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(`${API}/api/ev`, new Blob([body], { type: 'application/json' }));
+    } else {
+      fetch(`${API}/api/ev`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body, keepalive: true }).catch(() => {});
+    }
+  } catch (_) {}
+}
 let _access = { billing_enabled:false, paid:true, free_used:0, free_limit:3 };
 async function refreshAccess() {
   try {
@@ -545,7 +558,7 @@ async function startCheckout() {
       await refreshAccess();
       if (++n >= 6 || _access.paid) {
         clearInterval(t);
-        if (_access.paid) alert('🎉 Subscription active — enjoy unlimited practice!');
+        if (_access.paid) { track('subscribe'); alert('🎉 Subscription active — enjoy unlimited practice!'); }
       }
     }, 1500);
   }
@@ -596,11 +609,12 @@ async function beginSession(mode, focus) {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ topic: state.topic, level: state.level, uid: getUid(), focus: state.focus })
     });
-    if (res.status === 402) { resetStartBtns(); showPaywall(); return; }
+    if (res.status === 402) { track('paywall_hit', { mode }); resetStartBtns(); showPaywall(); return; }
     if (!res.ok) throw new Error(await res.text());
     const d = await res.json();
     refreshAccess();
     state.sessionId = d.session_id;
+    if (mode === 'assess') track('test_started', { level: state.level });
     document.getElementById('chat-label').textContent =
       mode === 'assess' ? `Level test · target ${state.level}` : `${cap(state.topic)} · ${state.level}`;
     document.getElementById('turn-counter').textContent = '0 turns';
@@ -861,6 +875,8 @@ async function showAssessment() {
     _lastAssessment = d;
     try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(_) {}
     _cardDataUrl = renderScoreCard(d);
+    track('test_completed', { level: d.estimated_level, score: d.score });
+    track('card_rendered', { level: d.estimated_level, score: d.score });
     document.getElementById('card-img').src = _cardDataUrl;
     document.getElementById('assess-loading').style.display = 'none';
     document.getElementById('assess-content').style.display = 'block';
@@ -950,6 +966,7 @@ function renderScoreCard(d) {
 }
 
 function practiceWeakPoints() {
+  track('practice_from_card');
   const w = (_lastAssessment && _lastAssessment.weaknesses) || [];
   beginSession('practice', w.join('; '));   // seed a targeted practice session with the test's weak points
 }
@@ -959,6 +976,7 @@ function saveCard() {
   const a = document.createElement('a');
   a.href = _cardDataUrl; a.download = 'my-hsk-level.png';
   document.body.appendChild(a); a.click(); a.remove();
+  track('card_saved');
 }
 
 async function shareCard() {
@@ -967,9 +985,9 @@ async function shareCard() {
     if (_cardDataUrl && navigator.canShare) {
       const blob = await (await fetch(_cardDataUrl)).blob();
       const file = new File([blob], 'my-hsk-level.png', { type: 'image/png' });
-      if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: caption }); return; }
+      if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: caption }); track('card_shared', { via: 'file' }); return; }
     }
-    if (navigator.share) { await navigator.share({ text: caption, url: SHARE_URL }); return; }
+    if (navigator.share) { await navigator.share({ text: caption, url: SHARE_URL }); track('card_shared', { via: 'url' }); return; }
   } catch(_) { return; }   // user cancelled or share failed → stop quietly
   copyCaption();           // no native share available → fall back to copy
 }
@@ -979,9 +997,10 @@ function copyCaption() {
   const btn = document.getElementById('copy-btn');
   if (navigator.clipboard) {
     navigator.clipboard.writeText(caption).then(() => {
+      track('caption_copied');
       if (btn) { const o = btn.textContent; btn.textContent = '✅ Copied!'; setTimeout(() => { btn.textContent = o; }, 2200); }
     }).catch(() => alert(caption));
-  } else alert(caption);
+  } else { track('caption_copied'); alert(caption); }
 }
 
 // ── Mic (Web Audio PCM capture — works on iOS Safari/Chrome, Android, desktop) ──
