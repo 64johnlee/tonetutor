@@ -46,7 +46,8 @@ national on MM2H with no own company/NRIC — LS as MoR needs none and pays to P
 - Root route sets `Cache-Control: no-store`; HTML also has a no-store meta — expect aggressive cache-busting.
 - Match the existing compact inline style in `index.html` (underscore-prefixed JS privates).
 
-## Open items (as of 2026-06-18)
+## Open items (as of 2026-06-24)
+- **Shipped 2026-06-24:** "Ask your tutor" Gemini copilot — `POST /api/copilot` (`api/copilot.py`, `copilot_turn` in `services/gemini.py`) answers learner questions grounded in the live session (level + history + accumulated tone `weak_points`); returns English explanation, pinyin examples, and optional `drill_focus`. Frontend 🎓 Tutor bottom-sheet with tap-to-speak examples + "Practise this →" (seeds a focused session via existing `focus` pathway). Live on revision `tonetitor-00039-kn9`.
 - Stripe-backed **identity verification** (via LS) — In Review; needs **Passport** (not MyKad). Required before live (non-test) payments.
 - Custom-domain **SSL** provisioning (waiting on Google).
 - Get first paying users (launch to r/ChineseLanguage) → revenue evidence for XPRIZE.
