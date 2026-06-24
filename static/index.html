@@ -343,13 +343,18 @@ html, body {
 .copilot-input-row button { background:var(--red); color:#fff; border:none; border-radius:10px; padding:0 1.1rem; font-weight:600; cursor:pointer; font-family:inherit; }
 .copilot-input-row button:disabled { opacity:.5; cursor:default; }
 .nav-icon-btn.help { font-weight:700; padding:0.3rem 0.6rem; }
-.guide-row { display:flex; gap:.7rem; align-items:flex-start; padding:.55rem 0; border-bottom:1px solid var(--border); }
-.guide-row:last-of-type { border-bottom:none; }
-.guide-ico { font-size:1.15rem; line-height:1.45; width:1.6rem; text-align:center; flex-shrink:0; }
-.guide-txt { font-size:.86rem; color:var(--text); line-height:1.5; }
-.guide-txt span { color:var(--sub); }
-.guide-start { margin-top:1rem; width:100%; padding:.7rem; border:none; border-radius:10px; background:var(--red); color:#fff; font-weight:600; font-size:.92rem; cursor:pointer; }
-.guide-start:hover { background:var(--red-hover); }
+/* Spotlight tour: dim screen, highlight one control at a time */
+.tour { position:fixed; inset:0; z-index:70; display:none; }
+.tour.open { display:block; }
+.tour-hole { position:absolute; border-radius:10px; box-shadow:0 0 0 9999px rgba(0,0,0,.72); transition:left .25s ease, top .25s ease, width .25s ease, height .25s ease; pointer-events:none; }
+.tour-pop { position:absolute; width:min(280px,82vw); background:var(--card); border:1px solid var(--border-hi); border-radius:14px; padding:.85rem 1rem 1rem; box-shadow:0 12px 40px rgba(0,0,0,.5); transition:left .2s ease, top .2s ease; }
+.tour-step { font-size:.72rem; color:var(--sub); font-weight:600; letter-spacing:.04em; }
+.tour-title { font-size:1rem; font-weight:700; color:var(--text); margin:.15rem 0 .3rem; }
+.tour-text { font-size:.85rem; color:var(--sub); line-height:1.5; }
+.tour-btns { display:flex; justify-content:space-between; align-items:center; margin-top:.9rem; }
+.tour-skip { background:none; border:none; color:var(--sub); font-size:.82rem; cursor:pointer; font-family:inherit; }
+.tour-next { background:var(--red); color:#fff; border:none; border-radius:9px; padding:.5rem 1rem; font-weight:600; font-size:.85rem; cursor:pointer; font-family:inherit; }
+.tour-next:hover { background:var(--red-hover); }
 </style>
 </head>
 <body>
@@ -423,7 +428,7 @@ html, body {
     <div class="nav-context" id="chat-label">Restaurant · HSK2</div>
     <div class="nav-spacer"></div>
     <div class="nav-pill" id="turn-counter">0 turns</div>
-    <button class="nav-icon-btn help" id="guide-toggle" onclick="openGuide()" aria-label="How to use ToneTutor" title="How it works">?</button>
+    <button class="nav-icon-btn help" id="guide-toggle" onclick="startTour()" aria-label="How to use ToneTutor" title="How it works">?</button>
     <button class="nav-icon-btn" id="copilot-toggle" onclick="toggleCopilot()">🎓 Tutor</button>
     <button class="nav-icon-btn" id="speak-toggle" onclick="toggleAutoSpeak()">🔊 Audio</button>
     <button class="nav-icon-btn end" id="end-btn" onclick="endSession()">End Session</button>
@@ -463,21 +468,17 @@ html, body {
     </div>
   </div>
 
-  <!-- First-run guide: what each control does -->
-  <div id="guide-sheet" class="copilot-sheet" aria-hidden="true" onclick="if(event.target===this)closeGuide()">
-    <div class="copilot-card" role="dialog" aria-label="How to use ToneTutor">
-      <div class="copilot-head">
-        <span>👋 How to practise</span>
-        <button class="copilot-close" onclick="closeGuide()" aria-label="Close">✕</button>
+  <!-- First-run spotlight tour: highlights one control at a time -->
+  <div id="tour" class="tour" aria-hidden="true">
+    <div class="tour-hole" id="tour-hole"></div>
+    <div class="tour-pop" id="tour-pop" role="dialog" aria-label="Quick tour">
+      <div class="tour-step" id="tour-step"></div>
+      <div class="tour-title" id="tour-title"></div>
+      <div class="tour-text" id="tour-text"></div>
+      <div class="tour-btns">
+        <button class="tour-skip" id="tour-skip" onclick="endTour()">Skip</button>
+        <button class="tour-next" id="tour-next" onclick="tourNext()">Next →</button>
       </div>
-      <div class="copilot-hint">You're chatting in Mandarin with Lin Wei, your AI tutor. Here's what each control does:</div>
-      <div class="guide-row"><div class="guide-ico">🎤</div><div class="guide-txt"><b>Speak</b> — tap the mic and talk in Mandarin, tap again to stop. <span>Your speech is transcribed for you.</span></div></div>
-      <div class="guide-row"><div class="guide-ico">⌨️</div><div class="guide-txt"><b>Type &amp; send</b> — or type in the box and press <b>↑</b> (or Enter).</div></div>
-      <div class="guide-row"><div class="guide-ico">💯</div><div class="guide-txt"><b>Get graded</b> — every reply is scored for <b>tones &amp; grammar</b>, with pinyin you can tap to replay.</div></div>
-      <div class="guide-row"><div class="guide-ico">🔊</div><div class="guide-txt"><b>Audio</b> — Lin Wei speaks each reply aloud. <span>Tap 🔊 Audio in the top bar to mute.</span></div></div>
-      <div class="guide-row"><div class="guide-ico">🎓</div><div class="guide-txt"><b>Tutor</b> — stuck? Step out of the roleplay and ask your teacher anything, e.g. <span>"why was my last tone wrong?"</span></div></div>
-      <div class="guide-row"><div class="guide-ico">🏁</div><div class="guide-txt"><b>End Session</b> — finish anytime to get your summary &amp; score.</div></div>
-      <button class="guide-start" onclick="closeGuide()">Got it — let's practise →</button>
     </div>
   </div>
 </div>
@@ -761,18 +762,67 @@ function toggleCopilot() {
   if (open) { track('copilot_open'); setTimeout(() => document.getElementById('copilot-input').focus(), 60); }
 }
 
-// ── First-run guide: explain the controls ─────────────────────────────────
-function openGuide() {
-  const sheet = document.getElementById('guide-sheet');
-  sheet.classList.add('open'); sheet.setAttribute('aria-hidden', 'false');
+// ── First-run spotlight tour: highlight each control in turn ───────────────
+const TOUR_STEPS = [
+  { sel:'#mic-btn',        title:'🎤 Speak',       text:'Tap the mic and talk in Mandarin — tap again to stop. Your speech is transcribed for you.' },
+  { sel:'#user-input',     title:'⌨️ Or just type', text:'Prefer typing? Write here and press ↑ (or Enter) to send your message.' },
+  { sel:'#messages',       title:'💯 Tone grades', text:'Every reply you send is scored for tones & grammar, with pinyin you can tap to replay.' },
+  { sel:'#speak-toggle',   title:'🔊 Audio',       text:'Lin Wei speaks each reply aloud. Tap here to mute or unmute anytime.' },
+  { sel:'#copilot-toggle', title:'🎓 Ask your tutor', text:'Stuck? Step out of the roleplay and ask your tutor anything — like "why was my tone wrong?"' },
+  { sel:'#end-btn',        title:'🏁 Finish',      text:'Done practising? End the session anytime to get your summary & score.' },
+];
+let _tourI = 0;
+
+function startTour() {
+  _tourI = 0;
+  const t = document.getElementById('tour');
+  t.classList.add('open'); t.setAttribute('aria-hidden', 'false');
+  _renderTourStep();
 }
-function closeGuide() {
-  const sheet = document.getElementById('guide-sheet');
-  sheet.classList.remove('open'); sheet.setAttribute('aria-hidden', 'true');
+function tourNext() {
+  if (_tourI >= TOUR_STEPS.length - 1) { endTour(); return; }
+  _tourI++; _renderTourStep();
+}
+function endTour() {
+  const t = document.getElementById('tour');
+  t.classList.remove('open'); t.setAttribute('aria-hidden', 'true');
   localStorage.setItem('tt_guide_seen', '1');
 }
+function _renderTourStep() {
+  const step = TOUR_STEPS[_tourI];
+  const el = document.querySelector(step.sel);
+  if (!el) { tourNext(); return; }   // skip any control that isn't on screen
+  const r = el.getBoundingClientRect();
+  const pad = 6;
+  const hole = document.getElementById('tour-hole');
+  hole.style.left   = (r.left - pad) + 'px';
+  hole.style.top    = (r.top - pad) + 'px';
+  hole.style.width  = (r.width + pad * 2) + 'px';
+  hole.style.height = (r.height + pad * 2) + 'px';
+  document.getElementById('tour-step').textContent  = `${_tourI + 1} / ${TOUR_STEPS.length}`;
+  document.getElementById('tour-title').textContent = step.title;
+  document.getElementById('tour-text').textContent  = step.text;
+  document.getElementById('tour-next').textContent  = _tourI === TOUR_STEPS.length - 1 ? 'Done' : 'Next →';
+  // Place the callout below the target if it's in the top half, otherwise above.
+  const pop = document.getElementById('tour-pop');
+  pop.style.visibility = 'hidden';
+  requestAnimationFrame(() => {
+    const pr = pop.getBoundingClientRect();
+    const vw = window.innerWidth, vh = window.innerHeight, m = 12;
+    let left = r.left + r.width / 2 - pr.width / 2;
+    left = Math.max(m, Math.min(left, vw - pr.width - m));
+    let top = r.top < vh / 2 ? r.bottom + 12 : r.top - pr.height - 12;
+    top = Math.max(m, Math.min(top, vh - pr.height - m));
+    pop.style.left = left + 'px';
+    pop.style.top  = top + 'px';
+    pop.style.visibility = 'visible';
+  });
+}
+window.addEventListener('resize', () => {
+  if (document.getElementById('tour').classList.contains('open')) _renderTourStep();
+});
 function maybeShowGuide() {
-  if (!localStorage.getItem('tt_guide_seen')) { track('guide_shown'); openGuide(); }
+  if (!localStorage.getItem('tt_guide_seen')) { track('guide_shown'); startTour(); }
 }
 
 async function askCopilot() {
