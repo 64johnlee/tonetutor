@@ -28,11 +28,19 @@ async def chat(req: ChatRequest):
     except ResourceExhausted:
         raise HTTPException(status_code=503, detail="Gemini API quota reached — please wait a minute and try again.")
 
+    grade = result["grade"]
     sess["history"].append({
         "lin_wei": result["reply_zh"],
         "learner": req.user_message,
+        "grade": grade.model_dump() if grade else None,
     })
     sess["free_turns_used"] += 1
+
+    # Accumulate tone mistakes across the session so the copilot can target them.
+    if grade and grade.tone_errors:
+        weak_list = sess.setdefault("weak_points_list", [])
+        weak_list.extend(grade.tone_errors)
+        sess["weak_points"] = " · ".join(weak_list[-8:])
 
     return ChatResponse(
         session_id=req.session_id,

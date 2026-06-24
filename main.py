@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, Response
 from api.chat import router as chat_router
+from api.copilot import router as copilot_router
 from api.session import router as session_router
 from api.transcribe import router as transcribe_router
 from api.tts import router as tts_router
@@ -22,6 +23,7 @@ app.add_middleware(
 )
 
 app.include_router(chat_router)
+app.include_router(copilot_router)
 app.include_router(session_router)
 app.include_router(transcribe_router)
 app.include_router(tts_router)

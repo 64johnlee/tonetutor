@@ -319,6 +319,29 @@ html, body {
 .assess-body { max-width:480px; margin:0 auto; padding:1.5rem 1.5rem 3rem; display:flex; flex-direction:column; gap:1rem; flex:1; }
 .card-img { width:100%; max-width:360px; margin:0 auto; display:block; border-radius:var(--radius-lg); border:1px solid var(--border); box-shadow:0 12px 44px rgba(0,0,0,.45); }
 .assess-actions { display:flex; flex-direction:column; gap:.5rem; max-width:360px; margin:0 auto; width:100%; }
+
+/* Copilot — "Ask your tutor" bottom sheet */
+.copilot-sheet { position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:flex-end; justify-content:center; z-index:60; }
+.copilot-sheet.open { display:flex; }
+.copilot-card { background:var(--card); border:1px solid var(--border-hi); border-bottom:none; border-radius:18px 18px 0 0; width:100%; max-width:640px; padding:1rem 1.1rem 1.4rem; max-height:82vh; overflow-y:auto; box-shadow:0 -10px 40px rgba(0,0,0,.5); }
+.copilot-head { display:flex; justify-content:space-between; align-items:center; font-weight:700; color:var(--text); font-size:1rem; }
+.copilot-close { background:none; border:none; color:var(--sub); font-size:1.15rem; cursor:pointer; line-height:1; padding:.2rem; }
+.copilot-hint { font-size:.8rem; color:var(--sub); margin:.35rem 0 .85rem; line-height:1.5; }
+.copilot-answer { font-size:.92rem; color:var(--text); line-height:1.6; }
+.copilot-answer:empty { display:none; }
+.copilot-thinking { color:var(--sub); font-style:italic; }
+.copilot-ex { background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:.5rem .7rem; margin:.45rem 0; cursor:pointer; transition:border-color .14s; }
+.copilot-ex:hover { border-color:var(--border-hi); }
+.copilot-ex .zh { font-size:1.05rem; color:var(--text); }
+.copilot-ex .zh rt { font-size:.6em; color:var(--green); }
+.copilot-ex .en { font-size:.8rem; color:var(--sub); margin-top:.15rem; }
+.copilot-drill { margin-top:.8rem; width:100%; padding:.7rem; border:none; border-radius:10px; background:var(--red); color:#fff; font-weight:600; font-size:.92rem; cursor:pointer; }
+.copilot-drill:hover { background:var(--red-hover); }
+.copilot-input-row { display:flex; gap:.5rem; margin-top:.9rem; }
+.copilot-input-row input { flex:1; background:var(--bg); border:1px solid var(--border-hi); border-radius:10px; padding:.6rem .7rem; color:var(--text); font-size:.9rem; font-family:inherit; }
+.copilot-input-row input:focus { outline:none; border-color:var(--red); }
+.copilot-input-row button { background:var(--red); color:#fff; border:none; border-radius:10px; padding:0 1.1rem; font-weight:600; cursor:pointer; font-family:inherit; }
+.copilot-input-row button:disabled { opacity:.5; cursor:default; }
 </style>
 </head>
 <body>
@@ -392,6 +415,7 @@ html, body {
     <div class="nav-context" id="chat-label">Restaurant · HSK2</div>
     <div class="nav-spacer"></div>
     <div class="nav-pill" id="turn-counter">0 turns</div>
+    <button class="nav-icon-btn" id="copilot-toggle" onclick="toggleCopilot()">🎓 Tutor</button>
     <button class="nav-icon-btn" id="speak-toggle" onclick="toggleAutoSpeak()">🔊 Audio</button>
     <button class="nav-icon-btn end" id="end-btn" onclick="endSession()">End Session</button>
   </nav>
@@ -410,6 +434,22 @@ html, body {
       <div class="input-meta-row">
         <div class="end-hint"><span id="end-hint-lead">Done? </span><button id="end-hint-btn" onclick="endSession()">Get feedback →</button></div>
         <div id="char-counter">0 / 200</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Copilot: ask the tutor about your own mistakes / grammar / tones -->
+  <div id="copilot-sheet" class="copilot-sheet" aria-hidden="true" onclick="if(event.target===this)toggleCopilot()">
+    <div class="copilot-card" role="dialog" aria-label="Ask your tutor">
+      <div class="copilot-head">
+        <span>🎓 Ask your tutor</span>
+        <button class="copilot-close" onclick="toggleCopilot()" aria-label="Close">✕</button>
+      </div>
+      <div class="copilot-hint">Step out of the roleplay — ask about your mistakes, grammar, or tones. Tap any example to hear it.</div>
+      <div id="copilot-answer" class="copilot-answer"></div>
+      <div class="copilot-input-row">
+        <input id="copilot-input" type="text" placeholder="e.g. Why was my last tone wrong?" autocomplete="off" maxlength="200" aria-label="Your question"/>
+        <button id="copilot-ask" onclick="askCopilot()">Ask</button>
       </div>
     </div>
   </div>
@@ -684,6 +724,56 @@ function toggleAutoSpeak() {
   btn.classList.toggle('muted', !autoSpeak);
   if (!autoSpeak) _stopAudio();
 }
+
+// ── Copilot: "Ask your tutor" ─────────────────────────────────────────────
+function toggleCopilot() {
+  const sheet = document.getElementById('copilot-sheet');
+  const open = sheet.classList.toggle('open');
+  sheet.setAttribute('aria-hidden', open ? 'false' : 'true');
+  if (open) { track('copilot_open'); setTimeout(() => document.getElementById('copilot-input').focus(), 60); }
+}
+
+async function askCopilot() {
+  const input  = document.getElementById('copilot-input');
+  const askBtn = document.getElementById('copilot-ask');
+  const answer = document.getElementById('copilot-answer');
+  const q = input.value.trim();
+  if (!q || !state.sessionId) return;
+  askBtn.disabled = true; askBtn.textContent = '…';
+  answer.innerHTML = '<div class="copilot-thinking">Thinking…</div>';
+  try {
+    const res = await fetch(`${API}/api/copilot`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ session_id: state.sessionId, question: q })
+    });
+    if (!res.ok) throw new Error(await res.text());
+    renderCopilot(await res.json());
+    input.value = '';
+  } catch(e) { answer.innerHTML = ''; answer.textContent = 'Error: ' + e.message; }
+  finally { askBtn.disabled = false; askBtn.textContent = 'Ask'; }
+}
+
+function renderCopilot(d) {
+  const answer = document.getElementById('copilot-answer');
+  answer.innerHTML = '';
+  const p = document.createElement('div'); p.textContent = d.answer_en || ''; answer.appendChild(p);
+  (d.examples || []).forEach(ex => {
+    const card = document.createElement('div'); card.className = 'copilot-ex'; card.title = 'Tap to hear';
+    const zh = document.createElement('div'); zh.className = 'zh'; zh.lang = 'zh-Hans'; zh.appendChild(buildRuby(ex.zh, ex.pinyin));
+    const en = document.createElement('div'); en.className = 'en'; en.textContent = ex.en;
+    card.append(zh, en);
+    card.onclick = () => speak(ex.zh);
+    answer.appendChild(card);
+  });
+  if (d.drill_focus) {
+    const btn = document.createElement('button'); btn.className = 'copilot-drill';
+    btn.textContent = '🎯 Practise this →';
+    btn.onclick = () => { toggleCopilot(); beginSession('practice', d.drill_focus); };
+    answer.appendChild(btn);
+  }
+}
+
+document.getElementById('copilot-input').addEventListener('keydown', e => { if (e.key === 'Enter') askCopilot(); });
 
 // ── Send ─────────────────────────────────────────────────────────────────
 const uInput = document.getElementById('user-input');

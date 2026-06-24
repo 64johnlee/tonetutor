@@ -68,6 +68,23 @@ class ChatResponse(BaseModel):
     turn: int
 
 
+class CopilotExample(BaseModel):
+    zh: str
+    pinyin: str
+    en: str
+
+
+class CopilotRequest(BaseModel):
+    session_id: str
+    question: str
+
+
+class CopilotResponse(BaseModel):
+    answer_en: str
+    examples: list[CopilotExample] = []
+    drill_focus: Optional[str] = None   # short weak-point string to seed a focused session
+
+
 class SessionSummary(BaseModel):
     session_id: str
     overall_score: int

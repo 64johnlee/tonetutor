@@ -224,3 +224,64 @@ def get_level_assessment(history: list[dict]) -> dict:
         "weaknesses": data.get("weaknesses") or [],
         "share_blurb": _safe_str(data, "share_blurb", ""),
     }
+
+
+COPILOT_PROMPT = """You are Lin Wei, stepping OUT of the roleplay to act as the learner's
+patient Mandarin teacher. Answer their question in clear, encouraging English, grounded in
+THIS practice session. Be concrete and show Mandarin examples with pinyin tone numbers.
+
+Learner level: {level}
+Weak points flagged so far this session: {weak_points}
+
+Recent conversation (Lin Wei = you in roleplay, Learner = the student):
+{history}
+
+The learner's question to you (their teacher): "{question}"
+
+Return ONLY this JSON (no markdown):
+{{
+  "answer_en": "the explanation, in English",
+  "examples": [{{"zh": "simplified Chinese", "pinyin": "pinyin with tone numbers e.g. ni3 hao3", "en": "English"}}],
+  "drill_focus": "if practice would help, a SHORT weak-point string to target a focused session (e.g. '3rd tone, 是/不是'), else null"
+}}"""
+
+
+def copilot_turn(
+    level: HskLevel,
+    history: list[dict],
+    weak_points: str,
+    question: str,
+) -> dict:
+    model = _get_model()
+    lvl_desc = HSK_DESCRIPTIONS[level]
+    history_lines = []
+    for t in history:
+        history_lines.append(f"Learner: {t['learner']}")
+        history_lines.append(f"Lin Wei: {t['lin_wei']}")
+    history_text = "\n".join(history_lines) if history_lines else "(no conversation yet)"
+    prompt = COPILOT_PROMPT.format(
+        level=lvl_desc,
+        weak_points=weak_points or "nothing flagged yet",
+        history=history_text,
+        question=question,
+    )
+    response = model.generate_content(prompt, generation_config={"temperature": 0.4})
+    data = _parse_json(response.text)
+
+    examples = []
+    for ex in (data.get("examples") or [])[:5]:
+        if isinstance(ex, dict) and ex.get("zh"):
+            examples.append({
+                "zh": _safe_str(ex, "zh", ""),
+                "pinyin": _safe_str(ex, "pinyin", ""),
+                "en": _safe_str(ex, "en", ""),
+            })
+
+    drill = str(data.get("drill_focus") or "").strip()
+    if drill.lower() in ("", "null", "none", "n/a"):
+        drill = None
+    return {
+        "answer_en": _safe_str(data, "answer_en", "Let's go over that again."),
+        "examples": examples,
+        "drill_focus": drill,
+    }
