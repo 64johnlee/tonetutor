@@ -342,6 +342,14 @@ html, body {
 .copilot-input-row input:focus { outline:none; border-color:var(--red); }
 .copilot-input-row button { background:var(--red); color:#fff; border:none; border-radius:10px; padding:0 1.1rem; font-weight:600; cursor:pointer; font-family:inherit; }
 .copilot-input-row button:disabled { opacity:.5; cursor:default; }
+.nav-icon-btn.help { font-weight:700; padding:0.3rem 0.6rem; }
+.guide-row { display:flex; gap:.7rem; align-items:flex-start; padding:.55rem 0; border-bottom:1px solid var(--border); }
+.guide-row:last-of-type { border-bottom:none; }
+.guide-ico { font-size:1.15rem; line-height:1.45; width:1.6rem; text-align:center; flex-shrink:0; }
+.guide-txt { font-size:.86rem; color:var(--text); line-height:1.5; }
+.guide-txt span { color:var(--sub); }
+.guide-start { margin-top:1rem; width:100%; padding:.7rem; border:none; border-radius:10px; background:var(--red); color:#fff; font-weight:600; font-size:.92rem; cursor:pointer; }
+.guide-start:hover { background:var(--red-hover); }
 </style>
 </head>
 <body>
@@ -415,6 +423,7 @@ html, body {
     <div class="nav-context" id="chat-label">Restaurant · HSK2</div>
     <div class="nav-spacer"></div>
     <div class="nav-pill" id="turn-counter">0 turns</div>
+    <button class="nav-icon-btn help" id="guide-toggle" onclick="openGuide()" aria-label="How to use ToneTutor" title="How it works">?</button>
     <button class="nav-icon-btn" id="copilot-toggle" onclick="toggleCopilot()">🎓 Tutor</button>
     <button class="nav-icon-btn" id="speak-toggle" onclick="toggleAutoSpeak()">🔊 Audio</button>
     <button class="nav-icon-btn end" id="end-btn" onclick="endSession()">End Session</button>
@@ -451,6 +460,24 @@ html, body {
         <input id="copilot-input" type="text" placeholder="e.g. Why was my last tone wrong?" autocomplete="off" maxlength="200" aria-label="Your question"/>
         <button id="copilot-ask" onclick="askCopilot()">Ask</button>
       </div>
+    </div>
+  </div>
+
+  <!-- First-run guide: what each control does -->
+  <div id="guide-sheet" class="copilot-sheet" aria-hidden="true" onclick="if(event.target===this)closeGuide()">
+    <div class="copilot-card" role="dialog" aria-label="How to use ToneTutor">
+      <div class="copilot-head">
+        <span>👋 How to practise</span>
+        <button class="copilot-close" onclick="closeGuide()" aria-label="Close">✕</button>
+      </div>
+      <div class="copilot-hint">You're chatting in Mandarin with Lin Wei, your AI tutor. Here's what each control does:</div>
+      <div class="guide-row"><div class="guide-ico">🎤</div><div class="guide-txt"><b>Speak</b> — tap the mic and talk in Mandarin, tap again to stop. <span>Your speech is transcribed for you.</span></div></div>
+      <div class="guide-row"><div class="guide-ico">⌨️</div><div class="guide-txt"><b>Type &amp; send</b> — or type in the box and press <b>↑</b> (or Enter).</div></div>
+      <div class="guide-row"><div class="guide-ico">💯</div><div class="guide-txt"><b>Get graded</b> — every reply is scored for <b>tones &amp; grammar</b>, with pinyin you can tap to replay.</div></div>
+      <div class="guide-row"><div class="guide-ico">🔊</div><div class="guide-txt"><b>Audio</b> — Lin Wei speaks each reply aloud. <span>Tap 🔊 Audio in the top bar to mute.</span></div></div>
+      <div class="guide-row"><div class="guide-ico">🎓</div><div class="guide-txt"><b>Tutor</b> — stuck? Step out of the roleplay and ask your teacher anything, e.g. <span>"why was my last tone wrong?"</span></div></div>
+      <div class="guide-row"><div class="guide-ico">🏁</div><div class="guide-txt"><b>End Session</b> — finish anytime to get your summary &amp; score.</div></div>
+      <button class="guide-start" onclick="closeGuide()">Got it — let's practise →</button>
     </div>
   </div>
 </div>
@@ -663,6 +690,7 @@ async function beginSession(mode, focus) {
     showScreen('screen-chat');
     appendLinWei(d.opening_zh, d.opening_pinyin, d.opening_en);
     if (autoSpeak) speak(d.opening_zh);
+    maybeShowGuide();
   } catch(e) {
     alert('Could not start: ' + e.message);
     resetStartBtns();
@@ -731,6 +759,20 @@ function toggleCopilot() {
   const open = sheet.classList.toggle('open');
   sheet.setAttribute('aria-hidden', open ? 'false' : 'true');
   if (open) { track('copilot_open'); setTimeout(() => document.getElementById('copilot-input').focus(), 60); }
+}
+
+// ── First-run guide: explain the controls ─────────────────────────────────
+function openGuide() {
+  const sheet = document.getElementById('guide-sheet');
+  sheet.classList.add('open'); sheet.setAttribute('aria-hidden', 'false');
+}
+function closeGuide() {
+  const sheet = document.getElementById('guide-sheet');
+  sheet.classList.remove('open'); sheet.setAttribute('aria-hidden', 'true');
+  localStorage.setItem('tt_guide_seen', '1');
+}
+function maybeShowGuide() {
+  if (!localStorage.getItem('tt_guide_seen')) { track('guide_shown'); openGuide(); }
 }
 
 async function askCopilot() {
