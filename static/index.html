@@ -778,6 +778,11 @@ function startTour() {
   const t = document.getElementById('tour');
   t.classList.add('open'); t.setAttribute('aria-hidden', 'false');
   _renderTourStep();
+  // The first step renders during the session-start reflow (fonts/dock still settling),
+  // so re-measure the spotlight once layout is stable.
+  const reflow = () => { if (t.classList.contains('open')) _renderTourStep(); };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(reflow);
+  setTimeout(reflow, 250);
 }
 function tourNext() {
   if (_tourI >= TOUR_STEPS.length - 1) { endTour(); return; }
