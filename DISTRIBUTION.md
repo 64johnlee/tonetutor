@@ -39,6 +39,25 @@ Volume of *output* beats more input: talk daily even badly, get tone+grammar fee
 
 ---
 
+## 2b. Quora WARM-UP answers (NO link — post 1–2 of these FIRST)
+A brand-new Quora account that drops links gets collapsed. Post 1–2 of these genuine, zero-promo answers first (set credential = "Native Mandarin speaker & voice actor"), then the §2 tool-mention answers over the next days. Search each question (or a close variant) → Answer → paste → tweak a word or two. Pace: 1–2/day.
+
+**Q: "Why are Mandarin tones so hard / how do I get them right?"** → Tones are hard to *produce consistently* under load, not to hear. (1) Third tone is usually a low dip, not a full V. (2) Learn tone sandhi as a habit (3+3→2+3; 不/一 shifts). (3) Practise in 2-syllable chunks (朋友, 谢谢), not single characters. (4) Over-exaggerate at first — learners always under-do tones. Record yourself to catch flat tones.
+
+**Q: "When do I use 了 (le)?"** → Not a past-tense marker (Chinese has no tense). Two jobs: (1) completed action after the verb — 我吃了饭; (2) change of state, sentence-final — 下雨了 / 我知道了. Don't sprinkle on every past sentence (昨天我很忙 = no 了) or habits (我每天喝咖啡 = no 了). Ask: did something *complete* or *change*? If neither, no 了.
+
+**Q: "Best way to learn/remember Chinese characters?"** → Don't memorise stroke-by-stroke as pictures. Characters = reusable components. (1) Learn common radicals (氵木心口…); most characters decode (妈=女+马sound, 河=氵+可sound). (2) Group by shared component (请/清/情/晴 share 青). (3) SRS the high-frequency ~1,000 first. (4) Read a lot slightly below level. It gets easier as you go, not harder.
+
+**Q: "Difference between 的 / 得 / 地?"** → All *de*, three jobs, sort by position: 的 before a NOUN (我的书, 红色的车); 得 after a VERB before a degree/result complement (说得很好, 跑得快); 地 before a VERB for manner (慢慢地走, 认真地学). Test: noun after→的; "how well" after verb→得; "in what manner" before verb→地. (Casual texting: many natives just use 的 for all.)
+
+**Q: "How do measure words work / 个 vs others?"** → Number + MEASURE WORD + noun (三本书). 个 is the universal default — use it if you blank, always understood. Worth learning early: 本(books) 张(flat: paper/tables/tickets) 只(animals/one of a pair) 条(long thin: fish/roads/trousers) 杯·瓶(drinks) 件(clothing/matters). Best tip: learn the measure word *with* the noun as a chunk (一张桌子), not separately.
+
+**Q: "How do I improve my Chinese listening?"** → It's speed + connected speech, not vocab. (1) Intensive > extensive early — replay one short clip 5–10× until you catch it all. (2) Bilingual subs → Chinese-only → none, same material. (3) Shadow (repeat a beat behind). (4) Listen *below* your reading level. (5) Make peace with ambiguity — get the gist, keep going. Graded podcasts/slowed dialogues first.
+
+**Posting order:** warm-up (no link) → "practice speaking by myself" (§2, strongest fit) → rest of §2 over following days.
+
+---
+
 ## 3. Discord / language-exchange (Layer 2 — peer tone, HSK is fine here)
 Post in a resources/learning channel, **attach `hsk_card_h3.png`**, share your own card first.
 > Hey all — native Mandarin speaker + voice actor here. Built a free **3-min spoken-Chinese self-test** (HSK scale): quick voice/text convo with an AI → estimates your spoken HSK level + weak spots + a shareable card. *[attach card]* Honest bit: it grades the transcript, not raw pitch — so it's a spoken-level **estimate**, not a tone analyzer. Since you all know your real level, could you run it and tell me if it's accurate? 🙏 Free, no signup: tonetutor.tefusiang.com/hsk-speaking-test
