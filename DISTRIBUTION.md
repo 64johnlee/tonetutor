@@ -76,3 +76,11 @@ Template saved in Gmail drafts ("[OUTREACH TEMPLATE]"). Paste into each blog's c
 
 ## 5. High-intent niches (Layer 4 — user's accounts)
 CSC / Chinese-Govt-Scholarship groups (HSK is the gate), HSK exam-prep groups, university Chinese departments. Hook: "申 CSC 前先免费测口语够不够 HSK4/5".
+
+---
+
+## 6. OWNED Discord community — "ToneTutor — Mandarin HSK" (no gatekeeper)
+**Invite: `discord.gg/zcjwSfDZ`** (created 2026-06-26, owner = john). Channels: `#general` · `📢 announcements` · `🎯 hsk-scores` (post your card!) · `🗣️ speaking-tips` · `🐛 feedback`.
+**Linked from:** all 9 SEO pages + the `/hsk-speaking-test` landing footer + the app's **end-of-test/score-card screen** ("💬 Compare scores… join our Discord"). Fill it from owned traffic.
+**Why it matters:** UNLIKE Quora (deletes self-promo) or 中英交流 (permission-gated), this is an owned channel that **can't be deleted or gatekept**.
+**Bot + MCP (later, at ~10+ members):** wire `barryyip0625/mcp-discord` with a bot token → auto "HSK card of the day" in #hsk-scores + welcome bot. Bot is a separate identity (can't post as john in OTHER servers — that's by Discord design).
