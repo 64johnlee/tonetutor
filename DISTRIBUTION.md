@@ -84,3 +84,20 @@ CSC / Chinese-Govt-Scholarship groups (HSK is the gate), HSK exam-prep groups, u
 **Linked from:** all 9 SEO pages + the `/hsk-speaking-test` landing footer + the app's **end-of-test/score-card screen** ("💬 Compare scores… join our Discord"). Fill it from owned traffic.
 **Why it matters:** UNLIKE Quora (deletes self-promo) or 中英交流 (permission-gated), this is an owned channel that **can't be deleted or gatekept**.
 **Bot + MCP (later, at ~10+ members):** wire `barryyip0625/mcp-discord` with a bot token → auto "HSK card of the day" in #hsk-scores + welcome bot. Bot is a separate identity (can't post as john in OTHER servers — that's by Discord design).
+
+### 6b. #speaking-tips drip queue (paste one every 2–3 days, KL peak — keeps the channel warm)
+**Tip #1 (third tone = low dip, not a full V) — POSTED 2026-06-26.** Drip the rest in order:
+
+**Tip #2 — 不 and 一 secretly change tone**
+> 不 (bù) and 一 (yī) shift tone by what follows, and natives do it automatically: 不→**bú** before a 4th tone (不是 *bú shì*, 不要 *bú yào*); 一→**yí** before 4th (一个 *yí gè*), **yì** before 1st/2nd/3rd (一天 *yì tiān*). Drill in whole phrases, not as rules. Did anyone else not know 一 changes tone? 👀
+
+**Tip #3 — Not every syllable gets a full tone (轻声)**
+> The 2nd syllable in 妈妈, 谢谢, 朋友, 东西 is often **neutral** — light, short, no tone. Over-pronouncing it = robotic. Say 谢谢 with both hard 4th tones, then with the 2nd soft — hear it? What word have you been over-toning? 👇
+
+**Tip #4 — Record + compare (the fastest fix nobody likes)**
+> Record yourself saying a sentence, then play a native version of the same line and compare. You'll catch flat tones you *swear* you nailed. Pleco/YouTube/ToneTutor audio = your native reference. Anyone brave enough to post a clip? 🎤
+
+**Tip #5 — Slow down to lock tones, then speed up**
+> Rushing flattens tones into mush. Speak **slightly slower than feels natural** while locking tones in — speed returns once they're automatic. Slow + correct beats fast + wrong. What's harder for you: tones, or natural speed? 👇
+
+(Refill the queue when it runs low — same source as the Quora warm-ups: tones / 了 / characters / 的得地 / measure words / listening.)
