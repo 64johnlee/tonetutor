@@ -101,3 +101,19 @@ CSC / Chinese-Govt-Scholarship groups (HSK is the gate), HSK exam-prep groups, u
 > Rushing flattens tones into mush. Speak **slightly slower than feels natural** while locking tones in — speed returns once they're automatic. Slow + correct beats fast + wrong. What's harder for you: tones, or natural speed? 👇
 
 (Refill the queue when it runs low — same source as the Quora warm-ups: tones / 了 / characters / 的得地 / measure words / listening.)
+
+---
+
+## 7. Video drip queue (built 2026-06-26 — post 1/day at KL peak)
+1080×1920 shorts built via `python3 tools/build_short.py <a|b|c>` → MP4s in `C:\Users\User\` (brand dark+red, YaHei font renders Chinese). Post one per day in order via `post_tiktok.py` + `post_x_video.py` + `post_ig_reel.py`. NEVER post at midnight KL.
+
+**A — `hsk_v_canpass_hsk6.mp4`** (10s, "Can you pass HSK 6 speaking?")
+> Could you actually pass HSK 6 *speaking*? 99% can't 😅 An AI rates your spoken Mandarin in 3 min — find your real level free 🎯 link in IG bio @johnlee007 #HSK #HSK6 #LearnChinese #Mandarin #中文 #chineselanguage
+
+**B — `hsk_v_tip_thirdtone.mp4`** (12s, third-tone native tip)
+> Native-speaker tip most courses get wrong: the 3rd tone is a LOW DIP, not a fall-rise "V" 🤯 你好 = ní-hǎo (first syllable low & short). Free HSK speaking test + more tips 🎯 link in IG bio @johnlee007 #LearnChinese #Mandarin #中文 #chinesetones #HSK #语言学习
+
+**C — `hsk_v_which_246.mp4`** (12s, "Which one are YOU?" HSK 2/4/6)
+> An AI pegs your spoken Mandarin in 3 min — which one are YOU? HSK 2, 4, or 6? Drop your level 👇 free test, link in IG bio @johnlee007 #HSK #LearnChinese #Mandarin #中文 #fyp #chinesetok
+
+Extend: add a spec to `tools/build_short.py` SPECS dict + rebuild.
