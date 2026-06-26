@@ -32,7 +32,7 @@ a{{color:var(--red)}}
 {body}
 <div class="note"><strong>Honest note:</strong> the test grades the transcript of what you say (speech-to-text + Gemini), so it's a spoken-level <em>estimate</em> from your grammar, vocabulary and fluency — not a raw pitch-contour tone analyzer. A fast, honest read on where you stand.</div>
 <a class="cta" href="{cta}">Test my level free →</a>
-<footer>ToneTutor — real Mandarin conversation practice with an AI native speaker that grades your tones in real time. Built by a bilingual native-speaker voice actor. <a href="/">Home</a> · <a href="/hsk-speaking-test">HSK speaking test</a></footer>
+<footer>ToneTutor — real Mandarin conversation practice with an AI native speaker that grades your tones in real time. Built by a bilingual native-speaker voice actor. <a href="/">Home</a> · <a href="/hsk-speaking-test">HSK speaking test</a> · <a href="https://discord.gg/zcjwSfDZ">💬 Join our Discord</a></footer>
 </div></body></html>"""
 
 _COMMON_BODY = """<h2>How it works</h2>
