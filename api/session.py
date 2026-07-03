@@ -26,6 +26,8 @@ async def start_session(req: StartSessionRequest):
         opening = get_opening(req.topic, req.level)
     except ResourceExhausted:
         raise HTTPException(status_code=503, detail="Gemini API quota reached — please wait a minute and try again.")
+    except TimeoutError:
+        raise HTTPException(status_code=504, detail="The tutor is taking too long — please try again.")
     session_id = str(uuid.uuid4())
     sessions[session_id] = {
         "topic": req.topic,
@@ -57,6 +59,8 @@ async def get_session_summary(session_id: str):
         data = get_summary(sess["history"])
     except ResourceExhausted:
         raise HTTPException(status_code=503, detail="Gemini API quota reached — please wait a minute and try again.")
+    except TimeoutError:
+        raise HTTPException(status_code=504, detail="The tutor is taking too long — please try again.")
     return SessionSummary(
         session_id=session_id,
         overall_score=data.get("overall_score", 5),
@@ -79,6 +83,8 @@ async def get_level_test(session_id: str):
         data = get_level_assessment(sess["history"])
     except ResourceExhausted:
         raise HTTPException(status_code=503, detail="Gemini API quota reached — please wait a minute and try again.")
+    except TimeoutError:
+        raise HTTPException(status_code=504, detail="The tutor is taking too long — please try again.")
     return LevelAssessment(
         session_id=session_id,
         estimated_level=data["estimated_level"],

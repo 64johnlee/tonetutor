@@ -20,13 +20,32 @@ class TTSRequest(BaseModel):
     rate: float = 0.9   # speaking rate; frontend sends ~0.6 for the 🐢 slow button
 
 
+_MAX_SENT_CHARS = 100   # Chirp3-HD 400s on sentences without ending punctuation
+
+
+def _breakable(text: str) -> str:
+    """Insert sentence breaks into overlong punctuation-free stretches so
+    Chirp3-HD doesn't reject the request with 'sentences that are too long'."""
+    out, run = [], 0
+    for ch in text:
+        out.append(ch)
+        if ch in "。！？.!?\n":
+            run = 0
+        else:
+            run += 1
+            if run >= _MAX_SENT_CHARS:
+                out.append("。")
+                run = 0
+    return "".join(out)
+
+
 @router.post("/tts")
 async def synthesize_speech(req: TTSRequest):
     if not req.text.strip():
         raise HTTPException(status_code=400, detail="Empty text")
 
     client = _get_tts_client()
-    synthesis_input = texttospeech.SynthesisInput(text=req.text)
+    synthesis_input = texttospeech.SynthesisInput(text=_breakable(req.text))
     voice = texttospeech.VoiceSelectionParams(
         language_code="cmn-CN",
         name="cmn-CN-Chirp3-HD-Aoede",  # Google's latest AI female Mandarin voice

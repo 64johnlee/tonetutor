@@ -1,3 +1,4 @@
+import concurrent.futures
 import json
 import re
 import vertexai
@@ -20,6 +21,30 @@ def _get_model(name=QUALITY_MODEL):
     if name not in _model_cache:
         _model_cache[name] = GenerativeModel(name)
     return _model_cache[name]
+
+
+_gen_pool = concurrent.futures.ThreadPoolExecutor(max_workers=8)
+GEN_DEADLINE_S = 30
+
+
+def _generate(model, prompt: str, config: dict):
+    """generate_content with JSON mode, a hard per-attempt deadline, one retry.
+
+    Vertex occasionally stalls far past Cloud Run's 60s request timeout, which
+    surfaced to users as an opaque 504 ("upstream request timeout"). Every call
+    also sets max_output_tokens via `config` so a repetition loop can't run
+    unbounded. Non-timeout errors (e.g. quota) propagate untouched so the
+    routers' ResourceExhausted handling keeps working.
+    """
+    config = {**config, "response_mime_type": "application/json"}
+    for attempt in (1, 2):
+        future = _gen_pool.submit(model.generate_content, prompt, generation_config=config)
+        try:
+            return future.result(timeout=GEN_DEADLINE_S)
+        except concurrent.futures.TimeoutError:
+            future.cancel()
+            if attempt == 2:
+                raise TimeoutError(f"Gemini did not answer within {GEN_DEADLINE_S}s (2 attempts)")
 
 
 def _parse_json(text: str) -> dict:
@@ -98,7 +123,7 @@ def get_opening(topic: Topic, level: HskLevel) -> dict:
     scenario = TOPIC_DESCRIPTIONS[topic]
     lvl_desc = HSK_DESCRIPTIONS[level]
     prompt = OPENING_PROMPT.format(scenario=scenario, level=lvl_desc)
-    response = model.generate_content(prompt, generation_config={"temperature": 0.7, "response_mime_type": "application/json"})
+    response = _generate(model, prompt, {"temperature": 0.7, "max_output_tokens": 512})
     data = _parse_json(response.text)
     return {
         "reply_zh": _safe_str(data, "reply_zh", "你好！"),
@@ -138,7 +163,7 @@ def chat_turn(
         history=history_text,
         user_message=user_message,
     )
-    response = model.generate_content(prompt, generation_config={"temperature": 0.7, "response_mime_type": "application/json"})
+    response = _generate(model, prompt, {"temperature": 0.7, "max_output_tokens": 1024})
     data = _parse_json(response.text)
 
     grade_raw = data.get("grade") or {}
@@ -166,7 +191,7 @@ def get_summary(history: list[dict]) -> dict:
         for t in history
     )
     prompt = SUMMARY_PROMPT.format(history=history_text)
-    response = model.generate_content(prompt, generation_config={"temperature": 0.3, "response_mime_type": "application/json"})
+    response = _generate(model, prompt, {"temperature": 0.3, "max_output_tokens": 1024})
     data = _parse_json(response.text)
     return {
         "overall_score": int(data.get("overall_score", 5)),
@@ -206,7 +231,7 @@ def get_level_assessment(history: list[dict]) -> dict:
         for t in history
     )
     prompt = ASSESS_PROMPT.format(history=history_text)
-    response = model.generate_content(prompt, generation_config={"temperature": 0.3, "response_mime_type": "application/json"})
+    response = _generate(model, prompt, {"temperature": 0.3, "max_output_tokens": 1024})
     data = _parse_json(response.text)
 
     level = _safe_str(data, "estimated_level", "HSK 1").strip()
@@ -270,7 +295,7 @@ def copilot_turn(
         history=history_text,
         question=question,
     )
-    response = model.generate_content(prompt, generation_config={"temperature": 0.4, "response_mime_type": "application/json"})
+    response = _generate(model, prompt, {"temperature": 0.4, "max_output_tokens": 1024})
     data = _parse_json(response.text)
 
     examples = []
@@ -320,7 +345,7 @@ def get_drill_sentences(level: HskLevel, weak_points: str, n: int = 10) -> list[
         weak_points=weak_points.strip() or "general tones and sentence rhythm",
         n=n,
     )
-    response = model.generate_content(prompt, generation_config={"temperature": 0.7, "response_mime_type": "application/json"})
+    response = _generate(model, prompt, {"temperature": 0.7, "max_output_tokens": 2048})
     data = _parse_json(response.text)
     out = []
     for s in (data.get("sentences") or [])[:n]:
@@ -357,7 +382,7 @@ def score_shadow(target_zh: str, attempt: str) -> dict:
                 "feedback": "I didn't catch that — tap the mic and say it again.", "missed": []}
     model = _get_model()
     prompt = DRILL_SCORE_PROMPT.format(target=target_zh, attempt=attempt)
-    response = model.generate_content(prompt, generation_config={"temperature": 0.2, "response_mime_type": "application/json"})
+    response = _generate(model, prompt, {"temperature": 0.2, "max_output_tokens": 512})
     data = _parse_json(response.text)
     try:
         score = int(data.get("score", 0))
@@ -402,7 +427,7 @@ def get_word_drill(level: HskLevel, weak_points: str, n: int = 8) -> list[dict]:
         weak_points=weak_points.strip() or "common everyday vocabulary and measure words",
         n=n,
     )
-    response = model.generate_content(prompt, generation_config={"temperature": 0.7, "response_mime_type": "application/json"})
+    response = _generate(model, prompt, {"temperature": 0.7, "max_output_tokens": 2048})
     data = _parse_json(response.text)
     out = []
     for it in (data.get("items") or [])[:n]:

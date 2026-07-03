@@ -16,6 +16,8 @@ async def generate_drill(req: DrillGenerateRequest):
         rows = get_drill_sentences(req.level, req.weak_points, n=10)
     except ResourceExhausted:
         raise HTTPException(status_code=503, detail="Gemini API quota reached — please wait a minute and try again.")
+    except TimeoutError:
+        raise HTTPException(status_code=504, detail="The tutor is taking too long — please try again.")
     if not rows:
         raise HTTPException(status_code=502, detail="Could not generate drill sentences — please try again.")
     return DrillGenerateResponse(sentences=[DrillSentence(**r) for r in rows])
@@ -29,6 +31,8 @@ async def score_drill(req: DrillScoreRequest):
         result = score_shadow(req.target_zh, req.attempt)
     except ResourceExhausted:
         raise HTTPException(status_code=503, detail="Gemini API quota reached — please wait a minute and try again.")
+    except TimeoutError:
+        raise HTTPException(status_code=504, detail="The tutor is taking too long — please try again.")
     return DrillScoreResponse(**result)
 
 
@@ -38,6 +42,8 @@ async def generate_word_drill(req: DrillGenerateRequest):
         rows = get_word_drill(req.level, req.weak_points, n=8)
     except ResourceExhausted:
         raise HTTPException(status_code=503, detail="Gemini API quota reached — please wait a minute and try again.")
+    except TimeoutError:
+        raise HTTPException(status_code=504, detail="The tutor is taking too long — please try again.")
     if not rows:
         raise HTTPException(status_code=502, detail="Could not generate word drill — please try again.")
     return WordDrillResponse(items=[WordDrillItem(**r) for r in rows])

@@ -1240,7 +1240,15 @@ function appendLoading() {
 }
 
 // ── Summary ───────────────────────────────────────────────────────────────
-let _lastSummary = null;
+let _lastSummary = null, _sumRetried = false;
+function _showRetry(id, msg, fn) {
+  const el = document.getElementById(id);
+  el.innerHTML = '';
+  const t = document.createElement('div'); t.textContent = 'Error: ' + msg;
+  const b = document.createElement('button'); b.className = 'btn-new'; b.style.marginTop = '.8rem';
+  b.textContent = '↻ Try again'; b.onclick = fn;
+  el.appendChild(t); el.appendChild(b);
+}
 async function showSummary() {
   if (!state.sessionId) return;
   showScreen('screen-summary');
@@ -1275,10 +1283,13 @@ async function showSummary() {
     renderStreakBadge();
     prefetchDrill();   // warm both drills here too — practice mode ends on this screen
     prefetchWord();
+    _sumRetried = false;
     if (autoSpeak && d.next_focus) setTimeout(()=>speak(d.next_focus), 1000);
   } catch(e) {
+    if (!_sumRetried) { _sumRetried = true; return showSummary(); }   // one silent retry
+    _sumRetried = false;
     document.getElementById('sum-loading').style.display = 'none';
-    document.getElementById('sum-error').textContent = 'Error: ' + e.message;
+    _showRetry('sum-error', e.message, showSummary);
   }
 }
 
@@ -1323,7 +1334,7 @@ function shareScore() {
 // ── Assessment / shareable level card ──────────────────────────────────────
 function endSession() { if (state.mode === 'assess') showAssessment(); else showSummary(); }
 
-let _lastAssessment = null, _cardDataUrl = null;
+let _lastAssessment = null, _cardDataUrl = null, _assessRetried = false;
 
 async function showAssessment() {
   if (!state.sessionId) return;
@@ -1346,9 +1357,12 @@ async function showAssessment() {
     _showStreakLine('assess-streak-line');
     prefetchDrill();   // warm the shadow drill in the background while they read the score card
     prefetchWord();    // warm the word drill too, so tapping either feels instant
+    _assessRetried = false;
   } catch(e) {
+    if (!_assessRetried) { _assessRetried = true; return showAssessment(); }   // one silent retry
+    _assessRetried = false;
     document.getElementById('assess-loading').style.display = 'none';
-    document.getElementById('assess-error').textContent = 'Error: ' + e.message;
+    _showRetry('assess-error', e.message, showAssessment);
   }
 }
 

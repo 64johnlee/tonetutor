@@ -27,6 +27,8 @@ async def chat(req: ChatRequest):
         )
     except ResourceExhausted:
         raise HTTPException(status_code=503, detail="Gemini API quota reached — please wait a minute and try again.")
+    except TimeoutError:
+        raise HTTPException(status_code=504, detail="The tutor is taking too long — please try again.")
 
     grade = result["grade"]
     sess["history"].append({

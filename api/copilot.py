@@ -25,5 +25,7 @@ async def copilot(req: CopilotRequest):
         )
     except ResourceExhausted:
         raise HTTPException(status_code=503, detail="Gemini API quota reached — please wait a minute and try again.")
+    except TimeoutError:
+        raise HTTPException(status_code=504, detail="The tutor is taking too long — please try again.")
 
     return CopilotResponse(**result)
