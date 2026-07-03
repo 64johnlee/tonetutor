@@ -113,3 +113,46 @@ class LevelAssessment(BaseModel):
     weaknesses: list[str]
     share_blurb: str              # ready-to-post first-person caption
     turns: int
+
+
+# ── Shadow Drill (retrain weak spots) ──
+class DrillSentence(BaseModel):
+    zh: str                       # simplified Chinese target sentence
+    pinyin: str                   # pinyin with tone numbers (e.g. ni3 hao3)
+    en: str                       # English translation
+    focus: str                    # which weak point this sentence trains
+
+
+class DrillGenerateRequest(BaseModel):
+    level: HskLevel = HskLevel.hsk2
+    weak_points: str = ""         # weaknesses from the test, joined into one string
+
+
+class DrillGenerateResponse(BaseModel):
+    sentences: list[DrillSentence]
+
+
+class DrillScoreRequest(BaseModel):
+    target_zh: str                # the sentence the learner was asked to shadow
+    attempt: str                  # STT transcript of what the learner said
+
+
+class DrillScoreResponse(BaseModel):
+    score: int                    # 0-100 closeness of the shadow attempt
+    passed: bool                  # score >= pass threshold
+    feedback: str                 # one short encouraging line
+    missed: list[str]             # words/syllables that were off or dropped
+
+
+# ── Word Drill (tap-the-missing-word vocab recognition) ──
+class WordDrillItem(BaseModel):
+    sentence: str                 # full simplified-Chinese sentence (answer in place; used for audio)
+    answer: str                   # the correct missing word
+    options: list[str]            # 4 choices, includes the answer
+    pinyin: str                   # pinyin of the full sentence, tone numbers
+    en: str                       # English translation
+    focus: str                    # which weak point this trains
+
+
+class WordDrillResponse(BaseModel):
+    items: list[WordDrillItem]

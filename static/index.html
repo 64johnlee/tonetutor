@@ -366,6 +366,7 @@ html, body {
   <nav class="topnav">
     <div class="nav-brand"><span class="nav-brand-dot">●</span> ToneTutor</div>
     <div class="nav-spacer"></div>
+    <button class="nav-icon-btn" id="nb-nav-btn" onclick="openNotebook()">📓 Notebook</button>
     <div class="nav-pill">🆓 Free · No account needed</div>
   </nav>
 
@@ -376,6 +377,7 @@ html, body {
         <div class="hero-eyebrow">🎙 AI Mandarin Tutor</div>
         <h1 class="hero-title">Speak <span class="hero-cjk">中文</span><br>with confidence</h1>
         <p class="hero-desc">Real conversations with Lin Wei, your AI native speaker. Get instant tone feedback.</p>
+        <div id="streak-badge" style="display:none;margin:.7rem auto 0;padding:.35rem .9rem;border-radius:99px;background:rgba(210,153,34,.12);border:1px solid rgba(210,153,34,.4);color:#D29922;font-size:.85rem;font-weight:600;width:fit-content"></div>
       </div>
 
       <div class="config-card">
@@ -515,6 +517,7 @@ html, body {
       <div class="sum-block"><div class="sum-block-title">📚 Vocab to review</div><ul id="sum-vocab"></ul></div>
       <div class="sum-block"><div class="sum-block-title">🎯 Next focus</div><div class="sum-focus-body" id="sum-focus"></div></div>
 
+      <div class="tt-streak" id="sum-streak-line"></div>
       <div class="sum-cta">
         <button class="btn-share" onclick="shareScore()">📤 Share my score</button>
         <button class="btn-new"   onclick="location.reload()">Start a new session</button>
@@ -546,10 +549,210 @@ html, body {
         <button class="btn-share" onclick="saveCard()">📥 Save image</button>
         <button class="btn-share" id="copy-btn" onclick="copyCaption()">📋 Copy caption</button>
         <button class="btn-share" onclick="practiceWeakPoints()">🎯 Practice my weak points →</button>
+        <button class="btn-new" onclick="startDrill()">🔁 Retrain: Shadow Drill →</button>
+        <button class="btn-share" onclick="startWordDrill()">📝 Word Drill — tap the missing word →</button>
       </div>
+      <div class="tt-streak" id="assess-streak-line"></div>
       <a href="https://discord.gg/zcjwSfDZ" target="_blank" rel="noopener" style="display:block;text-align:center;margin-top:1.1rem;color:#E5534B;font-size:.9rem;text-decoration:none">💬 Compare scores with other learners — join our Discord</a>
     </div>
     <div id="assess-error" style="color:var(--red);padding:1.5rem 0;font-size:.9rem;line-height:1.5"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     SHADOW DRILL (retrain weak spots: hear → shadow → score → fireworks)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<style>
+.drill-body{max-width:640px;margin:0 auto;padding:1.4rem 1.1rem 3rem}
+.drill-progwrap{height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin:.4rem 0}
+.drill-progfill{height:100%;background:var(--red,#E5534B);width:0;transition:width .35s ease}
+.drill-count{text-align:center;color:#7D8590;font-size:.85rem;margin-bottom:.4rem}
+.drill-focus{text-align:center;color:#D29922;font-size:.85rem;font-weight:600;min-height:1.1em;margin-bottom:1rem}
+.drill-sentence{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:1.8rem 1.2rem;text-align:center}
+.drill-zh{font-size:2rem;line-height:1.8;color:#E6EDF3}
+.drill-en{margin-top:1rem;color:#7D8590;font-size:1rem}
+.drill-controls{display:flex;gap:1.1rem;justify-content:center;align-items:center;margin:1.6rem 0 .5rem}
+.drill-replay{background:rgba(255,255,255,.06);color:#E6EDF3;border:1px solid rgba(255,255,255,.12);border-radius:99px;padding:.7rem 1.2rem;font-size:1rem;cursor:pointer}
+.drill-mic{width:76px;height:76px;border-radius:50%;border:none;background:var(--red,#E5534B);color:#fff;font-size:1.8rem;cursor:pointer;box-shadow:0 6px 20px rgba(229,83,75,.4)}
+.drill-mic:disabled{opacity:.5;cursor:default}
+.drill-mic.recording{animation:drillpulse 1s infinite}
+@keyframes drillpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
+.drill-hint{text-align:center;color:#7D8590;font-size:.8rem;margin-bottom:1rem}
+.drill-feedback{min-height:2.2rem;text-align:center}
+.drill-fb-score{font-size:2.4rem;font-weight:800;line-height:1.1}
+.drill-fb-pass{color:#3FB950}.drill-fb-fail{color:#D29922}
+.drill-fb-line{color:#E6EDF3;font-size:.95rem;margin-top:.3rem}
+.drill-fb-missed{color:#7D8590;font-size:.85rem;margin-top:.3rem}
+#drill-next{margin:1.2rem auto 0;display:block}
+.drill-fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:1}
+.drill-done-inner{position:relative;z-index:2;text-align:center;padding:2.6rem 1rem}
+.drill-done-emoji{font-size:3.4rem}
+.drill-done-title{font-size:1.8rem;font-weight:800;color:#E6EDF3;margin-top:.4rem}
+.drill-done-score{font-size:4rem;font-weight:800;color:var(--red,#E5534B);margin-top:.7rem;line-height:1}
+.drill-done-sub{color:#7D8590}
+.drill-done-msg{color:#E6EDF3;margin-top:1rem;font-size:1rem;max-width:30ch;margin-left:auto;margin-right:auto}
+</style>
+<div id="screen-drill" class="screen">
+  <nav class="topnav">
+    <div class="nav-brand"><span class="nav-brand-dot">●</span> ToneTutor</div>
+    <div class="nav-sep"></div>
+    <div class="nav-context">Shadow Drill</div>
+    <div class="nav-spacer"></div>
+    <button class="nav-icon-btn" onclick="location.reload()">← Exit</button>
+  </nav>
+
+  <div class="drill-body">
+    <div id="drill-loading" class="sum-loading">Building your retrain drill…</div>
+
+    <div id="drill-card" style="display:none">
+      <div class="drill-progwrap"><div id="drill-progress-fill" class="drill-progfill"></div></div>
+      <div class="drill-count" id="drill-progress">1 / 10</div>
+      <div class="drill-focus" id="drill-focus"></div>
+
+      <div class="drill-sentence">
+        <div id="drill-zh" class="drill-zh"></div>
+        <div id="drill-en" class="drill-en"></div>
+      </div>
+
+      <div class="drill-controls">
+        <button class="drill-replay" onclick="speakDrill(DRILL.sentences[DRILL.idx].zh)">🔊 Hear it</button>
+        <button id="drill-mic" class="drill-mic" onclick="drillMic()" aria-label="Shadow the sentence">🎤</button>
+        <button class="drill-replay" id="drill-save" onclick="saveDrillToNotebook()" aria-label="Save to notebook">⭐ Save</button>
+      </div>
+      <div class="drill-hint">Listen, then tap 🎤 and say it straight back (shadowing).</div>
+
+      <div id="drill-feedback" class="drill-feedback"></div>
+      <button id="drill-next" class="btn-new" style="display:none" onclick="drillNext()">Next →</button>
+    </div>
+
+    <div id="drill-done" style="display:none">
+      <canvas id="drill-fx" class="drill-fx"></canvas>
+      <div class="drill-done-inner">
+        <div class="drill-done-emoji">🎉</div>
+        <div class="drill-done-title">Retrained!</div>
+        <div class="drill-done-score" id="drill-done-score">0</div>
+        <div class="drill-done-sub">average shadow score</div>
+        <div class="drill-done-msg" id="drill-done-msg"></div>
+        <div class="tt-streak" id="drill-streak-line"></div>
+        <div class="assess-actions" style="margin-top:1.4rem">
+          <button class="btn-new" onclick="startDrill()">🔁 Drill again</button>
+          <button class="btn-share" onclick="startWordDrill()">📝 Word Drill</button>
+          <button class="btn-share" onclick="location.reload()">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     WORD DRILL (tap the missing word: hear → tap → check → fireworks)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<style>
+.wd-body{max-width:640px;margin:0 auto;padding:1.4rem 1.1rem 3rem}
+.wd-progwrap{height:8px;border-radius:99px;background:rgba(255,255,255,.08);overflow:hidden;margin:.4rem 0}
+.wd-progfill{height:100%;background:var(--red,#E5534B);width:0;transition:width .35s ease}
+.wd-count{text-align:center;color:#7D8590;font-size:.85rem;margin-bottom:.4rem}
+.wd-focus{text-align:center;color:#D29922;font-size:.85rem;font-weight:600;min-height:1.1em;margin-bottom:.5rem}
+.wd-prompt{text-align:center;color:#7D8590;font-size:.9rem;margin-bottom:.8rem}
+.wd-sentence{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:1.8rem 1.1rem;text-align:center;font-size:1.9rem;line-height:1.8;color:#E6EDF3}
+.wd-blank{color:var(--red,#E5534B);border-bottom:2px solid var(--red,#E5534B);padding:0 .35em;margin:0 .1em}
+.wd-blank-ok{color:#3FB950;border-color:#3FB950}
+.wd-blank-bad{color:#f85149;border-color:#f85149}
+.wd-en{text-align:center;color:#7D8590;margin-top:.8rem;font-size:1rem}
+.wd-hear-row{display:flex;gap:.7rem;justify-content:center;margin-top:1.1rem}
+.wd-hear{background:rgba(255,255,255,.06);color:#E6EDF3;border:1px solid rgba(255,255,255,.12);border-radius:99px;padding:.6rem 1.2rem;font-size:1rem;cursor:pointer}
+.wd-options{display:grid;grid-template-columns:1fr 1fr;gap:.7rem;margin:1.3rem 0 .3rem}
+.wd-tile{background:rgba(255,255,255,.06);color:#E6EDF3;border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:.9rem;font-size:1.35rem;cursor:pointer;transition:all .12s}
+.wd-tile.sel{border-color:var(--red,#E5534B);background:rgba(229,83,75,.18)}
+.wd-tile.wd-ok{border-color:#3FB950;background:rgba(63,185,80,.2);color:#3FB950}
+.wd-tile.wd-bad{border-color:#f85149;background:rgba(248,81,73,.2);color:#f85149}
+.wd-feedback{min-height:1.6rem;text-align:center;margin-top:.6rem}
+.wd-fb-ok{color:#3FB950;font-weight:700;font-size:1.1rem}
+.wd-fb-bad{color:#D29922;font-weight:700;font-size:1.05rem}
+#wd-check,#wd-next{margin:1rem auto 0;display:block}
+#wd-check:disabled{opacity:.45;cursor:default}
+.wd-done-inner{position:relative;z-index:2;text-align:center;padding:2.6rem 1rem}
+/* animated "working" state so drill generation never looks frozen/glitched */
+#drill-loading, #wd-loading{animation:ttpulse 1.25s ease-in-out infinite}
+#drill-loading::after, #wd-loading::after{content:"";display:block;width:34px;height:34px;margin:1.1rem auto 0;border-radius:50%;border:3px solid rgba(229,83,75,.25);border-top-color:var(--red,#E5534B);animation:ttspin .8s linear infinite}
+@keyframes ttpulse{0%,100%{opacity:.55}50%{opacity:1}}
+@keyframes ttspin{to{transform:rotate(360deg)}}
+</style>
+<div id="screen-worddrill" class="screen">
+  <nav class="topnav">
+    <div class="nav-brand"><span class="nav-brand-dot">●</span> ToneTutor</div>
+    <div class="nav-sep"></div>
+    <div class="nav-context">Word Drill</div>
+    <div class="nav-spacer"></div>
+    <button class="nav-icon-btn" onclick="location.reload()">← Exit</button>
+  </nav>
+  <div class="wd-body">
+    <div id="wd-loading" class="sum-loading">Building your word drill…</div>
+
+    <div id="wd-card" style="display:none">
+      <div class="wd-progwrap"><div id="wd-progress-fill" class="wd-progfill"></div></div>
+      <div class="wd-count" id="wd-progress">1 / 8</div>
+      <div class="wd-focus" id="wd-focus"></div>
+      <div class="wd-prompt">Tap the missing word — or 🎤 say it out loud</div>
+      <div class="wd-sentence" id="wd-sentence"></div>
+      <div class="wd-en" id="wd-en"></div>
+      <div class="wd-hear-row">
+        <button class="wd-hear" onclick="speakDrill(WORD.items[WORD.idx].sentence)">🔊 Hear it</button>
+        <button class="wd-hear" onclick="speakDrill(WORD.items[WORD.idx].sentence, 0.6)">🐢 Slow</button>
+        <button class="wd-hear" id="wd-mic" onclick="wdMic()" aria-label="Answer by voice">🎤 Say it</button>
+      </div>
+      <div class="wd-options" id="wd-options"></div>
+      <div class="wd-feedback" id="wd-feedback"></div>
+      <button id="wd-check" class="btn-new" disabled onclick="checkWord()">Check</button>
+      <button id="wd-save" class="wd-hear" style="display:none;margin:.8rem auto 0" onclick="saveWordToNotebook()">⭐ Save to notebook</button>
+      <button id="wd-next" class="btn-new" style="display:none" onclick="wordNext()">Next →</button>
+    </div>
+
+    <div id="wd-done" style="display:none">
+      <canvas id="wd-fx" class="drill-fx"></canvas>
+      <div class="wd-done-inner">
+        <div class="drill-done-emoji">🎉</div>
+        <div class="drill-done-title">Nice recall!</div>
+        <div class="drill-done-score" id="wd-done-score">0/8</div>
+        <div class="drill-done-sub">words correct</div>
+        <div class="drill-done-msg" id="wd-done-msg"></div>
+        <div class="tt-streak" id="wd-streak-line"></div>
+        <div class="assess-actions" style="margin-top:1.4rem">
+          <button class="btn-new" onclick="startWordDrill()">🔁 Drill again</button>
+          <button class="btn-share" onclick="location.reload()">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     NOTEBOOK (saved words & sentences + daily streak styles)
+     ═══════════════════════════════════════════════════════════════════════ -->
+<style>
+.tt-streak{text-align:center;color:#D29922;font-weight:700;margin-top:.9rem;font-size:.95rem;min-height:1.2em}
+.wd-hear.recording{border-color:var(--red,#E5534B);color:#E5534B;animation:drillpulse 1s infinite}
+.nb-item{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:.9rem 1rem;margin-bottom:.7rem;display:flex;align-items:center;gap:.8rem}
+.nb-main{flex:1;min-width:0}
+.nb-zh{font-size:1.25rem;color:#E6EDF3;line-height:1.5;word-break:break-word}
+.nb-py{color:#D29922;font-size:.85rem}
+.nb-en{color:#7D8590;font-size:.85rem}
+.nb-meta{color:#7D8590;font-size:.72rem;margin-top:.2rem}
+.nb-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#E6EDF3;border-radius:10px;padding:.45rem .6rem;cursor:pointer;font-size:1rem;flex-shrink:0}
+.nb-actions{display:flex;justify-content:center;margin-bottom:1.1rem}
+</style>
+<div id="screen-notebook" class="screen">
+  <nav class="topnav">
+    <div class="nav-brand"><span class="nav-brand-dot">●</span> ToneTutor</div>
+    <div class="nav-sep"></div>
+    <div class="nav-context">📓 Notebook</div>
+    <div class="nav-spacer"></div>
+    <button class="nav-icon-btn" onclick="showScreen('screen-setup')">← Back</button>
+  </nav>
+  <div class="wd-body">
+    <div class="nb-actions"><button class="wd-hear" onclick="nbAddManual()">＋ Write a note</button></div>
+    <div id="nb-list"></div>
+    <div id="nb-empty" class="drill-hint" style="display:none;margin-top:2rem">Nothing saved yet — tap ⭐ Save on any drill sentence or word, and it'll be waiting here.</div>
   </div>
 </div>
 
@@ -1008,6 +1211,7 @@ async function showSummary() {
     document.getElementById('sum-focus').textContent = d.next_focus || '';
     document.getElementById('sum-loading').style.display = 'none';
     document.getElementById('sum-content').style.display = 'block';
+    _showStreakLine('sum-streak-line');
     animateScore(d.overall_score);
     if (autoSpeak && d.next_focus) setTimeout(()=>speak(d.next_focus), 1000);
   } catch(e) {
@@ -1068,6 +1272,9 @@ async function showAssessment() {
     document.getElementById('card-img').src = _cardDataUrl;
     document.getElementById('assess-loading').style.display = 'none';
     document.getElementById('assess-content').style.display = 'block';
+    _showStreakLine('assess-streak-line');
+    prefetchDrill();   // warm the shadow drill in the background while they read the score card
+    prefetchWord();    // warm the word drill too, so tapping either feels instant
   } catch(e) {
     document.getElementById('assess-loading').style.display = 'none';
     document.getElementById('assess-error').textContent = 'Error: ' + e.message;
@@ -1273,6 +1480,497 @@ function _encodePCM16(chunks) {
 }
 
 function cap(s) { return s.charAt(0).toUpperCase()+s.slice(1); }
+
+// ══ Shadow Drill (retrain weak spots) ══════════════════════════════════════
+const DRILL = { sentences: [], idx: 0, scores: [] };
+
+// The drill set is prefetched in the background the moment the score card shows,
+// so tapping "Retrain" feels instant (generation overlaps with reading the card).
+let _drillPrefetch = null;
+function _fetchDrillSet() {
+  const weak = (_lastAssessment && _lastAssessment.weaknesses) || [];
+  return fetch(`${API}/api/drill/generate`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ level: state.level, weak_points: weak.join('; ') })
+  }).then(async res => {
+    if (!res.ok) throw new Error(await res.text());
+    const sents = (await res.json()).sentences || [];
+    if (sents[0]) _fetchTTS(sents[0].zh);   // warm the first sentence's audio too
+    return sents;
+  });
+}
+function prefetchDrill() {
+  try { _drillPrefetch = _fetchDrillSet(); _drillPrefetch.catch(() => {}); } catch(_) { _drillPrefetch = null; }
+}
+
+async function startDrill() {
+  track('drill_started', { level: state.level });
+  showScreen('screen-drill');
+  const L = document.getElementById('drill-loading');
+  L.textContent = 'Building your drill from your weak spots…'; L.style.display = 'block';
+  document.getElementById('drill-card').style.display = 'none';
+  document.getElementById('drill-done').style.display = 'none';
+  try {
+    let sents;
+    try { sents = await (_drillPrefetch || _fetchDrillSet()); }   // reuse prefetched set if ready
+    catch(_) { sents = await _fetchDrillSet(); }                  // prefetch failed → one fresh attempt
+    _drillPrefetch = null;
+    DRILL.sentences = sents; DRILL.idx = 0; DRILL.scores = [];
+    if (!DRILL.sentences.length) throw new Error('No sentences returned');
+    L.style.display = 'none';
+    document.getElementById('drill-card').style.display = 'block';
+    renderDrillSentence();
+  } catch(e) {
+    L.textContent = 'Could not start drill: ' + e.message + '. Tap Exit and try again.';
+  }
+}
+
+function renderDrillSentence() {
+  const s = DRILL.sentences[DRILL.idx], n = DRILL.sentences.length;
+  document.getElementById('drill-progress').textContent = `${DRILL.idx+1} / ${n}`;
+  document.getElementById('drill-progress-fill').style.width = `${DRILL.idx/n*100}%`;
+  document.getElementById('drill-focus').textContent = s.focus ? `🎯 ${s.focus}` : '';
+  const zhEl = document.getElementById('drill-zh');
+  zhEl.innerHTML = ''; zhEl.appendChild(buildRuby(s.zh, s.pinyin));
+  document.getElementById('drill-en').textContent = s.en;
+  document.getElementById('drill-feedback').innerHTML = '';
+  document.getElementById('drill-next').style.display = 'none';
+  const sv = document.getElementById('drill-save');
+  sv.textContent = nbHas(s.zh) ? '✓ Saved' : '⭐ Save'; sv.disabled = nbHas(s.zh);
+  const mic = document.getElementById('drill-mic');
+  mic.textContent = '🎤'; mic.classList.remove('recording'); mic.disabled = false;
+  speakDrill(s.zh);   // auto-play the native sentence to shadow
+  const nxt = DRILL.sentences[DRILL.idx + 1];   // warm the next sentence's audio so it plays instantly
+  if (nxt) _fetchTTS(nxt.zh);
+}
+
+// Drill TTS — independent of the chat speak() (which targets chat bubbles).
+// Audio is cached by text so replay + prefetched-next playback are instant.
+let _dAudio = null;
+const _ttsCache = {};   // zh text -> object URL
+async function _fetchTTS(text, rate) {
+  if (!text) return null;
+  const key = rate ? `${text}|${rate}` : text;   // cache slow audio separately
+  if (_ttsCache[key]) return _ttsCache[key];
+  try {
+    const res = await fetch(`${API}/api/tts`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(rate ? {text, rate} : {text}) });
+    if (!res.ok) return null;
+    const url = URL.createObjectURL(await res.blob());
+    _ttsCache[key] = url;
+    return url;
+  } catch(_) { return null; }
+}
+async function speakDrill(text, rate) {
+  if (!text) return;
+  if (_dAudio) { _dAudio.pause(); _dAudio = null; }
+  const url = await _fetchTTS(text, rate);
+  if (!url) return;
+  _dAudio = new Audio(url);
+  _dAudio.onended = _dAudio.onerror = () => { _dAudio = null; };   // keep cached URL for replay
+  _dAudio.play();
+}
+
+// Drill mic — self-contained PCM capture; deliberately separate from the chat
+// mic so the iOS-critical chat path is never touched. Reuses _encodePCM16.
+// Shared by the shadow drill AND the word drill's voice-answer (_micToggle).
+let _dCtx=null,_dStream=null,_dSrc=null,_dProc=null,_dChunks=[],_dRec=false,_dTimer=null;
+let _dMicEl=null,_dFbEl=null,_dOnDone=null,_dIdleLabel='🎤';
+function drillMic() {
+  _micToggle(document.getElementById('drill-mic'), document.getElementById('drill-feedback'), scoreDrillAttempt);
+}
+function wdMic() {
+  if (WORD.checked) return;
+  _micToggle(document.getElementById('wd-mic'), document.getElementById('wd-feedback'), wdVoiceAnswer);
+}
+async function _micToggle(mic, fbEl, onDone) {
+  if (_dRec) { _drillStop(); return; }
+  _dMicEl = mic; _dFbEl = fbEl; _dOnDone = onDone; _dIdleLabel = mic.textContent;
+  if (!navigator.mediaDevices?.getUserMedia) { alert('Microphone not supported on this device.'); return; }
+  try { _dStream = await navigator.mediaDevices.getUserMedia({ audio:true }); }
+  catch { alert('Microphone access denied. Allow microphone in browser settings.'); return; }
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    _dCtx = new AC();
+    if (_dCtx.state === 'suspended') await _dCtx.resume();
+    _dSrc = _dCtx.createMediaStreamSource(_dStream);
+    _dProc = _dCtx.createScriptProcessor(4096, 1, 1);
+    _dChunks = [];
+    _dProc.onaudioprocess = e => { if (_dRec) _dChunks.push(new Float32Array(e.inputBuffer.getChannelData(0))); };
+    _dSrc.connect(_dProc); _dProc.connect(_dCtx.destination);
+  } catch(err) { _drillCleanup(); alert('Could not start recording: ' + err.message); return; }
+  _dRec = true;
+  if (_dAudio) { _dAudio.pause(); _dAudio = null; }
+  mic.classList.add('recording'); mic.textContent = '⏹';
+  _dTimer = setTimeout(() => { if (_dRec) _drillStop(); }, 15000);  // sentences are short
+}
+
+async function _drillStop() {
+  if (!_dRec) return;
+  _dRec = false;
+  clearTimeout(_dTimer); _dTimer = null;
+  const mic = _dMicEl, fb = _dFbEl, onDone = _dOnDone;
+  const sr = _dCtx ? _dCtx.sampleRate : 48000;
+  const pcm16 = _encodePCM16(_dChunks);
+  _drillCleanup();
+  mic.classList.remove('recording'); mic.textContent = _dIdleLabel;
+  if (pcm16.byteLength === 0) { fb.innerHTML = '<div class="drill-fb-missed">No speech detected — tap 🎤 and try again.</div>'; return; }
+  fb.innerHTML = '<div class="drill-fb-missed">Listening…</div>';
+  mic.disabled = true;
+  let transcript = '';
+  try {
+    const form = new FormData();
+    form.append('audio', new Blob([pcm16], {type:'application/octet-stream'}), 'audio.pcm');
+    form.append('sample_rate', String(Math.round(sr)));
+    const res = await fetch(`${API}/api/transcribe`, { method:'POST', body:form });
+    if (res.ok) transcript = (await res.json()).transcript || '';
+  } catch(_) {}
+  await onDone(transcript);
+  mic.disabled = false;
+}
+
+function _drillCleanup() {
+  try { if (_dProc) { _dProc.disconnect(); _dProc.onaudioprocess = null; } } catch(e) {}
+  try { if (_dSrc) _dSrc.disconnect(); } catch(e) {}
+  try { if (_dStream) _dStream.getTracks().forEach(t=>t.stop()); } catch(e) {}
+  try { if (_dCtx) _dCtx.close(); } catch(e) {}
+  _dProc = _dSrc = _dStream = _dCtx = null;
+}
+
+// Instant local shadow scoring — character similarity between the STT transcript
+// and the target. Shadowing = "did you say the same characters?", so this is the
+// right metric AND removes the per-sentence LLM round-trip (the main latency).
+function _zhChars(s) { return [...(s || '')].filter(c => /[㐀-鿿]/.test(c)); }
+function _lev(a, b) {
+  const m = a.length, n = b.length; if (!m) return n; if (!n) return m;
+  let prev = Array.from({length:n+1}, (_,i) => i), cur = new Array(n+1);
+  for (let i = 1; i <= m; i++) { cur[0] = i;
+    for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+(a[i-1]===b[j-1]?0:1));
+    [prev, cur] = [cur, prev];
+  }
+  return prev[n];
+}
+function scoreShadowLocal(targetZh, attempt) {
+  const T = _zhChars(targetZh), A = _zhChars(attempt);
+  if (!A.length) return { score:0, passed:false, feedback:"I didn't catch that — tap 🎤 and say it again.", missed:[] };
+  const score = Math.max(0, Math.min(100, Math.round((1 - _lev(T, A) / Math.max(T.length, 1)) * 100)));
+  const aSet = new Set(A);
+  const missed = [...new Set(T.filter(c => !aSet.has(c)))].slice(0, 6);
+  return {
+    score, passed: score >= 75, missed,
+    feedback: score >= 90 ? 'Almost perfect — great shadowing! ✨'
+            : score >= 75 ? 'Solid match — nicely done.'
+            : score >= 50 ? 'Getting there — tap 🔊, listen, and match the rhythm.'
+            : 'Give it another go — 🔊 then shadow it.',
+  };
+}
+
+async function scoreDrillAttempt(transcript) {
+  const s = DRILL.sentences[DRILL.idx];
+  const fb = document.getElementById('drill-feedback');
+  const d = scoreShadowLocal(s.zh, transcript);   // instant — no network round-trip
+  const cls = d.passed ? 'drill-fb-pass' : 'drill-fb-fail';
+  const missed = (d.missed && d.missed.length) ? `<div class="drill-fb-missed">Watch: ${d.missed.join(', ')}</div>` : '';
+  fb.innerHTML =
+    `<div class="drill-fb-score ${cls}">${d.score}<span style="font-size:1rem">/100</span></div>` +
+    `<div class="drill-fb-line">${d.passed ? '✓ ' : ''}${d.feedback}</div>` + missed;
+  DRILL.scores[DRILL.idx] = Math.max(DRILL.scores[DRILL.idx] || 0, d.score);  // keep best of retries
+  const next = document.getElementById('drill-next');
+  next.textContent = (DRILL.idx >= DRILL.sentences.length - 1) ? 'Finish →' : (d.passed ? 'Next →' : 'Skip / Next →');
+  next.style.display = 'block';
+}
+
+function drillNext() {
+  if (_dAudio) { _dAudio.pause(); _dAudio = null; }
+  DRILL.idx++;
+  if (DRILL.idx >= DRILL.sentences.length) finishDrill();
+  else renderDrillSentence();
+}
+
+function finishDrill() {
+  const n = DRILL.sentences.length;
+  let sum = 0; for (let i = 0; i < n; i++) sum += (DRILL.scores[i] || 0);
+  const avg = Math.round(sum / n);
+  track('drill_completed', { score: avg, level: state.level });
+  document.getElementById('drill-card').style.display = 'none';
+  document.getElementById('drill-done').style.display = 'block';
+  document.getElementById('drill-done-score').textContent = avg;
+  const msg = avg >= 85 ? 'Outstanding — those weak spots are weak no more. 🔥'
+            : avg >= 70 ? 'Strong retrain. Run it again to lock it in.'
+            : 'Good first pass — drill again and watch the score climb.';
+  document.getElementById('drill-done-msg').textContent = msg;
+  _showStreakLine('drill-streak-line');
+  drillFireworks();
+}
+
+// Canvas fireworks celebration
+function drillFireworks(canvasId) {
+  const cv = document.getElementById(canvasId || 'drill-fx'); if (!cv) return;
+  const ctx = cv.getContext('2d');
+  cv.width = innerWidth; cv.height = innerHeight;
+  const colors = ['#E5534B','#3FB950','#D29922','#58A6FF','#E6EDF3'];
+  let parts = [];
+  const burst = (x,y) => { for (let i=0;i<40;i++){ const a=Math.random()*Math.PI*2, sp=2+Math.random()*5;
+    parts.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,c:colors[Math.floor(Math.random()*colors.length)]}); } };
+  let bursts = 0;
+  const iv = setInterval(() => { if (bursts++ < 6) burst(cv.width*(.2+Math.random()*.6), cv.height*(.2+Math.random()*.4)); else clearInterval(iv); }, 420);
+  let frames = 0;
+  (function anim() {
+    ctx.clearRect(0,0,cv.width,cv.height);
+    parts.forEach(p => { p.x+=p.vx; p.y+=p.vy; p.vy+=0.08; p.life-=0.012;
+      ctx.globalAlpha=Math.max(0,p.life); ctx.fillStyle=p.c; ctx.beginPath(); ctx.arc(p.x,p.y,3,0,7); ctx.fill(); });
+    ctx.globalAlpha = 1;
+    parts = parts.filter(p => p.life > 0);
+    if (++frames < 280 || parts.length) requestAnimationFrame(anim);
+    else ctx.clearRect(0,0,cv.width,cv.height);
+  })();
+}
+
+// ══ Word Drill (tap the missing word) ══════════════════════════════════════
+const WORD = { items: [], idx: 0, correct: 0, selected: null, checked: false };
+let _wordPrefetch = null;
+
+function _fetchWordSet() {
+  const weak = (_lastAssessment && _lastAssessment.weaknesses) || [];
+  return fetch(`${API}/api/drill/words`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ level: state.level, weak_points: weak.join('; ') })
+  }).then(async res => {
+    if (!res.ok) throw new Error(await res.text());
+    const items = (await res.json()).items || [];
+    if (items[0]) _fetchTTS(items[0].sentence);   // warm the first sentence's audio
+    return items;
+  });
+}
+function prefetchWord() { try { _wordPrefetch = _fetchWordSet(); _wordPrefetch.catch(()=>{}); } catch(_) { _wordPrefetch = null; } }
+
+async function startWordDrill() {
+  track('word_drill_started', { level: state.level });
+  showScreen('screen-worddrill');
+  const L = document.getElementById('wd-loading');
+  L.textContent = 'Building your word drill from your weak spots…'; L.style.display = 'block';
+  document.getElementById('wd-card').style.display = 'none';
+  document.getElementById('wd-done').style.display = 'none';
+  try {
+    try { WORD.items = await (_wordPrefetch || _fetchWordSet()); }   // reuse prefetched set if ready
+    catch(_) { WORD.items = await _fetchWordSet(); }                 // prefetch failed → one fresh attempt
+    _wordPrefetch = null;
+    WORD.idx = 0; WORD.correct = 0;
+    if (!WORD.items.length) throw new Error('No items returned');
+    L.style.display = 'none';
+    document.getElementById('wd-card').style.display = 'block';
+    renderWordItem();
+  } catch(e) {
+    L.textContent = 'Could not start word drill: ' + e.message + '. Tap Exit and try again.';
+  }
+}
+
+function _blankSentence(sentence, answer) {
+  const i = sentence.indexOf(answer);
+  if (i < 0) return _esc(sentence) + ' <span class="wd-blank" id="wd-blank">____</span>';
+  return _esc(sentence.slice(0, i)) + '<span class="wd-blank" id="wd-blank">____</span>' + _esc(sentence.slice(i + answer.length));
+}
+function _esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function renderWordItem() {
+  const it = WORD.items[WORD.idx], n = WORD.items.length;
+  WORD.selected = null; WORD.checked = false;
+  document.getElementById('wd-progress').textContent = `${WORD.idx+1} / ${n}`;
+  document.getElementById('wd-progress-fill').style.width = `${WORD.idx/n*100}%`;
+  document.getElementById('wd-focus').textContent = it.focus ? `🎯 ${it.focus}` : '';
+  document.getElementById('wd-sentence').innerHTML = _blankSentence(it.sentence, it.answer);
+  document.getElementById('wd-en').textContent = it.en || '';
+  const opts = document.getElementById('wd-options'); opts.innerHTML = '';
+  it.options.forEach(w => {
+    const b = document.createElement('button');
+    b.className = 'wd-tile'; b.textContent = w;
+    b.onclick = () => selectWordTile(b, w);
+    opts.appendChild(b);
+  });
+  document.getElementById('wd-feedback').innerHTML = '';
+  const chk = document.getElementById('wd-check');
+  chk.style.display = 'block'; chk.disabled = true;
+  document.getElementById('wd-next').style.display = 'none';
+  document.getElementById('wd-save').style.display = 'none';
+  const wm = document.getElementById('wd-mic');
+  wm.disabled = false; wm.textContent = '🎤 Say it'; wm.classList.remove('recording');
+  speakDrill(it.sentence);   // hear the full sentence
+}
+
+function selectWordTile(btn, w) {
+  if (WORD.checked) return;
+  WORD.selected = w;
+  document.querySelectorAll('#wd-options .wd-tile').forEach(t => t.classList.remove('sel'));
+  btn.classList.add('sel');
+  document.getElementById('wd-check').disabled = false;
+}
+
+function checkWord() {
+  if (WORD.checked || WORD.selected == null) return;
+  WORD.checked = true;
+  const it = WORD.items[WORD.idx];
+  const ok = WORD.selected === it.answer;
+  if (ok) WORD.correct++;
+  const blank = document.getElementById('wd-blank');
+  if (blank) { blank.textContent = it.answer; blank.classList.add(ok ? 'wd-blank-ok' : 'wd-blank-bad'); }
+  document.querySelectorAll('#wd-options .wd-tile').forEach(t => {
+    if (t.textContent === it.answer) t.classList.add('wd-ok');
+    else if (t.textContent === WORD.selected) t.classList.add('wd-bad');
+    t.disabled = true;
+  });
+  document.getElementById('wd-feedback').innerHTML = ok
+    ? '<div class="wd-fb-ok">✓ Correct!</div>'
+    : `<div class="wd-fb-bad">Answer: ${_esc(it.answer)}</div>`;
+  document.getElementById('wd-check').style.display = 'none';
+  const sv = document.getElementById('wd-save');
+  sv.style.display = 'block';
+  sv.textContent = nbHas(it.sentence) ? '✓ Saved' : '⭐ Save to notebook'; sv.disabled = nbHas(it.sentence);
+  const nb = document.getElementById('wd-next');
+  nb.textContent = (WORD.idx >= WORD.items.length - 1) ? 'Finish →' : 'Next →';
+  nb.style.display = 'block';
+}
+
+function wordNext() {
+  if (_dAudio) { _dAudio.pause(); _dAudio = null; }
+  WORD.idx++;
+  if (WORD.idx >= WORD.items.length) finishWordDrill();
+  else renderWordItem();
+}
+
+function finishWordDrill() {
+  const n = WORD.items.length, pct = Math.round(WORD.correct / n * 100);
+  track('word_drill_completed', { score: pct, level: state.level });
+  document.getElementById('wd-card').style.display = 'none';
+  document.getElementById('wd-done').style.display = 'block';
+  document.getElementById('wd-done-score').textContent = `${WORD.correct}/${n}`;
+  document.getElementById('wd-done-msg').textContent =
+      pct >= 85 ? 'Sharp recall — those words are locked in. 🔥'
+    : pct >= 60 ? 'Good — run it again to seal the gaps.'
+    : 'Nice start — drill again and watch it climb.';
+  _showStreakLine('wd-streak-line');
+  drillFireworks('wd-fx');
+}
+
+// ══ Word Drill voice answer — say the missing word (or the whole sentence) ══
+function wdVoiceAnswer(transcript) {
+  if (WORD.checked) return;   // they tapped an answer while STT was in flight
+  const it = WORD.items[WORD.idx];
+  const fb = document.getElementById('wd-feedback');
+  const said = (transcript || '').replace(/[\s，。！？、,.!?；;：:]/g, '');
+  if (!said) { fb.innerHTML = '<div class="drill-fb-missed">I didn\'t catch that — tap 🎤 and try again.</div>'; return; }
+  // exact: an option appears in what they said (word alone, or the full sentence)
+  let matches = it.options.filter(o => said.includes(o));
+  if (!matches.length) {
+    // partial: at least half the option's characters were heard (STT homophone slack)
+    matches = it.options.filter(o => {
+      const oc = [...o], hit = oc.filter(c => said.includes(c)).length;
+      return hit >= Math.ceil(oc.length / 2);
+    });
+  }
+  if (!matches.length) {
+    fb.innerHTML = `<div class="drill-fb-missed">I heard “${_esc(transcript)}” — that doesn't match an option. Say it again, or tap one.</div>`;
+    return;
+  }
+  // Homophone tie (e.g. 他/她): if the correct answer is among the matches, credit it —
+  // the learner said the right sound, which is all a voice answer can prove.
+  const pick = matches.includes(it.answer) ? it.answer : matches[0];
+  const tile = [...document.querySelectorAll('#wd-options .wd-tile')].find(t => t.textContent === pick);
+  if (!tile) return;
+  track('word_drill_voice', { level: state.level });
+  selectWordTile(tile, pick);
+  checkWord();
+}
+
+// ══ Daily check-in streak (打卡) — localStorage, device-local like everything else ══
+function _dayStr(d) { return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function _streak() { try { return JSON.parse(localStorage.getItem('tt_streak')) || {count:0,last:'',best:0}; } catch(_) { return {count:0,last:'',best:0}; } }
+function checkInToday() {
+  const s = _streak(), today = _dayStr(new Date());
+  if (s.last === today) return s;
+  const yesterday = _dayStr(new Date(Date.now() - 864e5));
+  s.count = (s.last === yesterday) ? s.count + 1 : 1;
+  s.last = today; s.best = Math.max(s.best || 0, s.count);
+  localStorage.setItem('tt_streak', JSON.stringify(s));
+  track('checkin', { day: s.count });
+  return s;
+}
+function _showStreakLine(id) {
+  const el = document.getElementById(id); if (!el) return;
+  const s = checkInToday();
+  el.textContent = s.count > 1 ? `🔥 打卡 Day ${s.count} — ${s.count}-day streak!`
+                               : '🔥 打卡 Day 1 — come back tomorrow to start a streak!';
+  renderStreakBadge();
+}
+function renderStreakBadge() {
+  const el = document.getElementById('streak-badge'); if (!el) return;
+  const s = _streak(), today = _dayStr(new Date()), yesterday = _dayStr(new Date(Date.now() - 864e5));
+  if (s.last === today)          el.textContent = `🔥 ${s.count}-day streak · checked in today ✓`;
+  else if (s.last === yesterday) el.textContent = `🔥 ${s.count}-day streak — practice today to keep it!`;
+  else { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+}
+
+// ══ Notebook (笔记本) — save words & sentences to review later ══
+function _nbLoad() { try { return JSON.parse(localStorage.getItem('tt_notebook')) || []; } catch(_) { return []; } }
+function _nbStore(list) { localStorage.setItem('tt_notebook', JSON.stringify(list)); renderNbCount(); }
+function nbHas(zh) { return _nbLoad().some(e => e.zh === zh); }
+function nbAdd(entry) {
+  const list = _nbLoad();
+  if (entry.zh && list.some(e => e.zh === entry.zh)) return false;
+  list.unshift(Object.assign({}, entry, { ts: Date.now() }));
+  _nbStore(list);
+  track('notebook_saved', { kind: entry.focus || '' });
+  return true;
+}
+function nbRemove(ts) { _nbStore(_nbLoad().filter(e => e.ts !== ts)); renderNotebook(); }
+function renderNbCount() {
+  const btn = document.getElementById('nb-nav-btn'); if (!btn) return;
+  const n = _nbLoad().length;
+  btn.textContent = n ? `📓 Notebook (${n})` : '📓 Notebook';
+}
+function openNotebook() { renderNotebook(); showScreen('screen-notebook'); }
+function renderNotebook() {
+  const list = _nbLoad(), wrap = document.getElementById('nb-list');
+  wrap.innerHTML = '';
+  document.getElementById('nb-empty').style.display = list.length ? 'none' : 'block';
+  list.forEach(e => {
+    const row = document.createElement('div'); row.className = 'nb-item';
+    const main = document.createElement('div'); main.className = 'nb-main';
+    const zh = document.createElement('div'); zh.className = 'nb-zh'; zh.textContent = e.zh;
+    main.appendChild(zh);
+    if (e.pinyin) { const py = document.createElement('div'); py.className = 'nb-py'; py.textContent = e.pinyin; main.appendChild(py); }
+    if (e.en)     { const en = document.createElement('div'); en.className = 'nb-en'; en.textContent = e.en; main.appendChild(en); }
+    const meta = document.createElement('div'); meta.className = 'nb-meta';
+    meta.textContent = (e.focus ? e.focus + ' · ' : '') + new Date(e.ts).toLocaleDateString();
+    main.appendChild(meta);
+    const play = document.createElement('button'); play.className = 'nb-btn'; play.textContent = '🔊';
+    play.setAttribute('aria-label', 'Play audio'); play.onclick = () => speakDrill(e.zh);
+    const del = document.createElement('button'); del.className = 'nb-btn'; del.textContent = '🗑';
+    del.setAttribute('aria-label', 'Delete'); del.onclick = () => nbRemove(e.ts);
+    row.appendChild(main); row.appendChild(play); row.appendChild(del);
+    wrap.appendChild(row);
+  });
+}
+function nbAddManual() {
+  const text = (prompt('Write a note (a word, sentence, or anything to remember):') || '').trim();
+  if (!text) return;
+  nbAdd({ zh: text, pinyin: '', en: '', focus: 'note' });
+  renderNotebook();
+}
+function saveDrillToNotebook() {
+  const s = DRILL.sentences[DRILL.idx]; if (!s) return;
+  nbAdd({ zh: s.zh, pinyin: s.pinyin, en: s.en, focus: s.focus || 'shadow drill' });
+  const btn = document.getElementById('drill-save');
+  btn.textContent = '✓ Saved'; btn.disabled = true;
+}
+function saveWordToNotebook() {
+  const it = WORD.items[WORD.idx]; if (!it) return;
+  nbAdd({ zh: it.sentence, pinyin: it.pinyin, en: it.en, focus: `word: ${it.answer}` });
+  const btn = document.getElementById('wd-save');
+  btn.textContent = '✓ Saved'; btn.disabled = true;
+}
+
+renderStreakBadge();
+renderNbCount();
 </script>
 
 <style>

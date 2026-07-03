@@ -8,13 +8,17 @@ from models.schemas import (
 
 vertexai.init(project="disco-module-487411-m0", location="us-central1")
 
-_model_cache = None
+_model_cache = {}
 
-def _get_model():
-    global _model_cache
-    if _model_cache is None:
-        _model_cache = GenerativeModel("gemini-2.5-flash")
-    return _model_cache
+# Conversational path uses Flash-Lite (thinking OFF by default → much lower latency);
+# one-time, quality-critical calls (level assessment, summary) stay on full Flash.
+FAST_MODEL = "gemini-2.5-flash-lite"
+QUALITY_MODEL = "gemini-2.5-flash"
+
+def _get_model(name=QUALITY_MODEL):
+    if name not in _model_cache:
+        _model_cache[name] = GenerativeModel(name)
+    return _model_cache[name]
 
 
 def _parse_json(text: str) -> dict:
@@ -89,7 +93,7 @@ Return ONLY this JSON (no markdown):
 
 
 def get_opening(topic: Topic, level: HskLevel) -> dict:
-    model = _get_model()
+    model = _get_model(FAST_MODEL)
     scenario = TOPIC_DESCRIPTIONS[topic]
     lvl_desc = HSK_DESCRIPTIONS[level]
     prompt = OPENING_PROMPT.format(scenario=scenario, level=lvl_desc)
@@ -110,7 +114,7 @@ def chat_turn(
     opening_zh: str = "",
     focus: str = "",
 ) -> dict:
-    model = _get_model()
+    model = _get_model(FAST_MODEL)
     scenario = TOPIC_DESCRIPTIONS[topic]
     lvl_desc = HSK_DESCRIPTIONS[level]
 
@@ -285,3 +289,138 @@ def copilot_turn(
         "examples": examples,
         "drill_focus": drill,
     }
+
+
+# ── Shadow Drill: generate target sentences + score shadow attempts ──
+DRILL_GEN_PROMPT = """You are a Mandarin speaking coach building a SHADOWING drill to RE-TRAIN a learner on their weak spots (not teach new material).
+
+Learner level: {level}
+Their weak points from a speaking test: {weak_points}
+
+Write exactly {n} short, natural spoken Mandarin sentences for them to shadow (hear, then repeat aloud). Rules:
+- Keep each sentence at or slightly below their level — this is retraining, not stretching.
+- Each sentence should deliberately exercise one of their weak points (tones, a grammar pattern, etc.).
+- Everyday, speakable sentences (things a person actually says), 4-12 characters each.
+- Spread the weak points across the set; vary the sentences.
+
+Return ONLY this JSON (no markdown):
+{{
+  "sentences": [
+    {{"zh": "simplified Chinese", "pinyin": "pinyin with tone numbers e.g. ni3 hao3", "en": "English", "focus": "the weak point this trains, in a few words"}}
+  ]
+}}"""
+
+
+def get_drill_sentences(level: HskLevel, weak_points: str, n: int = 10) -> list[dict]:
+    model = _get_model(FAST_MODEL)
+    lvl_desc = HSK_DESCRIPTIONS[level]
+    prompt = DRILL_GEN_PROMPT.format(
+        level=lvl_desc,
+        weak_points=weak_points.strip() or "general tones and sentence rhythm",
+        n=n,
+    )
+    response = model.generate_content(prompt, generation_config={"temperature": 0.7})
+    data = _parse_json(response.text)
+    out = []
+    for s in (data.get("sentences") or [])[:n]:
+        if isinstance(s, dict) and s.get("zh"):
+            out.append({
+                "zh": _safe_str(s, "zh", ""),
+                "pinyin": _safe_str(s, "pinyin", ""),
+                "en": _safe_str(s, "en", ""),
+                "focus": _safe_str(s, "focus", ""),
+            })
+    return out
+
+
+DRILL_SCORE_PROMPT = """A learner is shadowing (repeating) a target Mandarin sentence. You are scoring how well their spoken attempt matched the target.
+
+Target sentence: "{target}"
+What speech recognition heard them say: "{attempt}"
+
+Score how closely the attempt matches the target in words and structure. Note: this is a speech-recognition transcript, so judge meaning and word match, NOT raw tone pitch (you cannot hear pitch). Minor homophone mis-hearings should be treated leniently. If the attempt is empty or unrelated, score low.
+
+Return ONLY this JSON (no markdown):
+{{
+  "score": <integer 0-100, how well it matched>,
+  "feedback": "one short, encouraging line of feedback (English)",
+  "missed": ["any words/parts that were dropped or wrong, each as a short string; empty list if none"]
+}}"""
+
+DRILL_PASS_THRESHOLD = 75
+
+
+def score_shadow(target_zh: str, attempt: str) -> dict:
+    if not attempt.strip():
+        return {"score": 0, "passed": False,
+                "feedback": "I didn't catch that — tap the mic and say it again.", "missed": []}
+    model = _get_model()
+    prompt = DRILL_SCORE_PROMPT.format(target=target_zh, attempt=attempt)
+    response = model.generate_content(prompt, generation_config={"temperature": 0.2})
+    data = _parse_json(response.text)
+    try:
+        score = int(data.get("score", 0))
+    except (ValueError, TypeError):
+        score = 0
+    score = max(0, min(100, score))
+    raw_missed = data.get("missed")
+    missed = [str(m) for m in raw_missed][:5] if isinstance(raw_missed, list) else []
+    return {
+        "score": score,
+        "passed": score >= DRILL_PASS_THRESHOLD,
+        "feedback": _safe_str(data, "feedback", "Nice work — keep going!"),
+        "missed": missed,
+    }
+
+
+# ── Word Drill: tap-the-missing-word vocab recognition items ──
+WORD_DRILL_PROMPT = """You are building a "tap the missing word" Mandarin vocab drill to RE-TRAIN a learner on their weak spots.
+
+Learner level: {level}
+Their weak points from a speaking test: {weak_points}
+
+Write exactly {n} short, natural spoken Mandarin sentences. For each, pick ONE meaningful word to be the missing answer, and give 4 answer choices (the correct word plus 3 plausible but wrong distractors of the same kind). Rules:
+- Sentences at or slightly below the learner's level; everyday and speakable (4-12 characters).
+- The answer word should exercise one of their weak points where possible.
+- Distractors must be believable (same part of speech / category), not random.
+- "sentence" must be the COMPLETE sentence with the answer already in it (used for audio).
+
+Return ONLY this JSON (no markdown):
+{{
+  "items": [
+    {{"sentence": "complete simplified Chinese sentence", "answer": "the missing word", "options": ["4 choices incl. the answer, shuffled"], "pinyin": "pinyin of the full sentence with tone numbers", "en": "English translation", "focus": "the weak point this trains, a few words"}}
+  ]
+}}"""
+
+
+def get_word_drill(level: HskLevel, weak_points: str, n: int = 8) -> list[dict]:
+    model = _get_model(FAST_MODEL)
+    lvl_desc = HSK_DESCRIPTIONS[level]
+    prompt = WORD_DRILL_PROMPT.format(
+        level=lvl_desc,
+        weak_points=weak_points.strip() or "common everyday vocabulary and measure words",
+        n=n,
+    )
+    response = model.generate_content(prompt, generation_config={"temperature": 0.7})
+    data = _parse_json(response.text)
+    out = []
+    for it in (data.get("items") or [])[:n]:
+        if not isinstance(it, dict):
+            continue
+        sentence = _safe_str(it, "sentence", "")
+        answer = _safe_str(it, "answer", "")
+        raw_opts = it.get("options")
+        options = [str(o) for o in raw_opts if str(o).strip()] if isinstance(raw_opts, list) else []
+        if answer and answer not in options:      # make sure the answer is always selectable
+            options.append(answer)
+        options = list(dict.fromkeys(options))[:4]  # dedupe, cap at 4
+        if sentence and answer and len(options) >= 2:
+            out.append({
+                "sentence": sentence,
+                "answer": answer,
+                "options": options,
+                "pinyin": _safe_str(it, "pinyin", ""),
+                "en": _safe_str(it, "en", ""),
+                "focus": _safe_str(it, "focus", ""),
+            })
+    return out

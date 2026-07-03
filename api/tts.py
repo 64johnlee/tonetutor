@@ -17,6 +17,7 @@ def _get_tts_client():
 
 class TTSRequest(BaseModel):
     text: str
+    rate: float = 0.9   # speaking rate; frontend sends ~0.6 for the 🐢 slow button
 
 
 @router.post("/tts")
@@ -32,7 +33,7 @@ async def synthesize_speech(req: TTSRequest):
     )
     audio_config = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.MP3,
-        speaking_rate=0.9,
+        speaking_rate=max(0.25, min(2.0, req.rate)),
     )
 
     try:
