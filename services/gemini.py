@@ -10,8 +10,9 @@ vertexai.init(project="disco-module-487411-m0", location="us-central1")
 
 _model_cache = {}
 
-# Conversational path uses Flash-Lite (thinking OFF by default → much lower latency);
-# one-time, quality-critical calls (level assessment, summary) stay on full Flash.
+# User-facing calls (chat, summary, assessment, drills) use Flash-Lite — thinking is
+# OFF by default so latency stays interactive (full Flash took ~8s+ per summary).
+# Full Flash remains for non-blocking / low-frequency paths (copilot, shadow scoring).
 FAST_MODEL = "gemini-2.5-flash-lite"
 QUALITY_MODEL = "gemini-2.5-flash"
 
@@ -159,7 +160,7 @@ def chat_turn(
 
 
 def get_summary(history: list[dict]) -> dict:
-    model = _get_model()
+    model = _get_model(FAST_MODEL)
     history_text = "\n".join(
         f"Learner: {t['learner']}\nLin Wei: {t['lin_wei']}"
         for t in history
@@ -199,7 +200,7 @@ _VALID_LEVELS = {"HSK 1", "HSK 2", "HSK 3", "HSK 4", "HSK 5", "HSK 6"}
 
 
 def get_level_assessment(history: list[dict]) -> dict:
-    model = _get_model()
+    model = _get_model(FAST_MODEL)
     history_text = "\n".join(
         f"Learner: {t['learner']}\nLin Wei: {t['lin_wei']}"
         for t in history

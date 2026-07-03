@@ -676,9 +676,9 @@ html, body {
 #wd-check,#wd-next{margin:1rem auto 0;display:block}
 #wd-check:disabled{opacity:.45;cursor:default}
 .wd-done-inner{position:relative;z-index:2;text-align:center;padding:2.6rem 1rem}
-/* animated "working" state so drill generation never looks frozen/glitched */
-#drill-loading, #wd-loading{animation:ttpulse 1.25s ease-in-out infinite}
-#drill-loading::after, #wd-loading::after{content:"";display:block;width:34px;height:34px;margin:1.1rem auto 0;border-radius:50%;border:3px solid rgba(229,83,75,.25);border-top-color:var(--red,#E5534B);animation:ttspin .8s linear infinite}
+/* animated "working" state so loading screens never look frozen/glitched */
+#drill-loading, #wd-loading, #sum-loading, #assess-loading{animation:ttpulse 1.25s ease-in-out infinite}
+#drill-loading::after, #wd-loading::after, #sum-loading::after, #assess-loading::after{content:"";display:block;width:34px;height:34px;margin:1.1rem auto 0;border-radius:50%;border:3px solid rgba(229,83,75,.25);border-top-color:var(--red,#E5534B);animation:ttspin .8s linear infinite}
 @keyframes ttpulse{0%,100%{opacity:.55}50%{opacity:1}}
 @keyframes ttspin{to{transform:rotate(360deg)}}
 </style>
