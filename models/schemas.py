@@ -88,6 +88,7 @@ class CopilotResponse(BaseModel):
 class SessionSummary(BaseModel):
     session_id: str
     overall_score: int
+    skills: dict[str, int] = {}   # accuracy/tones/vocab/fluency, 1-10 each
     strengths: list[str]
     top_mistakes: list[str]
     vocab_to_review: list[str]

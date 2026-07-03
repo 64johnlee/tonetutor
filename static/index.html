@@ -284,9 +284,14 @@ html, body {
 .sumx-grid { display:flex; flex-direction:column; gap:.65rem; }
 .sumx-tile { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:.85rem 1rem .9rem; }
 .sumx-lbl { font-size:.64rem; text-transform:uppercase; letter-spacing:.13em; font-weight:700; color:var(--muted); margin-bottom:.55rem; }
-.sumx-chips { display:flex; flex-wrap:wrap; gap:.4rem; }
-.sumx-chip { font-size:.8rem; border-radius:99px; padding:.32rem .75rem; line-height:1.35; border:1px solid rgba(229,83,75,.45); color:var(--red); background:rgba(229,83,75,.08); }
-.sumx-chip.g { border-color:rgba(63,185,80,.45); color:var(--green); background:rgba(63,185,80,.08); }
+.sumx-statrow { margin-bottom:.7rem; }
+.sumx-statrow .top { display:flex; justify-content:space-between; font-size:.72rem; letter-spacing:.09em; margin-bottom:.3rem; font-family:ui-monospace,"Cascadia Mono",Consolas,monospace; color:var(--text); font-variant-numeric:tabular-nums; }
+.sumx-statrow .top span { color:var(--sub); }
+.sumx-statbar { height:10px; border:1px solid var(--border); border-radius:3px; overflow:hidden; background:rgba(255,255,255,.03); }
+.sumx-statbar i { display:block; height:100%; width:0; transition:width .9s cubic-bezier(.4,0,.2,1); }
+.sumx-debrief { margin-top:.85rem; font-size:.8rem; line-height:1.7; color:var(--text); }
+.sumx-debrief .ok::before { content:"▲ "; color:var(--green); }
+.sumx-debrief .bad::before { content:"▼ "; color:var(--red); }
 .sumx-drills { display:grid; grid-template-columns:1fr 1fr; gap:.65rem; }
 .sumx-drill { border-radius:var(--radius-lg); padding:1rem .9rem; border:1px solid rgba(229,83,75,.5); background:linear-gradient(150deg, rgba(229,83,75,.28), rgba(229,83,75,.06) 65%); cursor:pointer; transition:transform .12s, box-shadow .12s; text-align:left; color:var(--text); font-family:inherit; }
 .sumx-drill:hover { transform:translateY(-2px); box-shadow:0 8px 22px rgba(229,83,75,.22); }
@@ -527,7 +532,8 @@ html, body {
       <div class="sumx-grid">
         <div class="sumx-tile">
           <div class="sumx-lbl">This session</div>
-          <div class="sumx-chips" id="sumx-chips"></div>
+          <div id="sumx-stats"></div>
+          <div class="sumx-debrief" id="sumx-debrief"></div>
         </div>
 
         <div class="sumx-drills">
@@ -1265,10 +1271,7 @@ async function showSummary() {
     document.getElementById('sumx-rank').textContent = _rankOf(score);
     document.getElementById('sum-score').textContent = `${score}/10`;
     document.getElementById('sumx-ctx-label').textContent = ` · ${cap(state.topic).toUpperCase()} · ${state.level}`;
-    const chips = document.getElementById('sumx-chips');
-    chips.innerHTML = '';
-    (d.strengths || []).forEach(s => chips.appendChild(_sumChip('✓ ' + s, true)));
-    (d.top_mistakes || []).forEach(s => chips.appendChild(_sumChip('✗ ' + s, false)));
+    _renderSkillBars(d);
     if (d.top_mistakes && d.top_mistakes[0])
       document.getElementById('sumx-drill-why').textContent = `Retrains: ${d.top_mistakes[0]}`;
     const vw = document.getElementById('sum-vocab');
@@ -1298,11 +1301,40 @@ function _rankOf(score) {
   return score >= 10 ? 'S+' : score >= 9 ? 'S' : score >= 8 ? 'A' : score >= 7 ? 'B+'
        : score >= 6 ? 'B' : score >= 5 ? 'C+' : score >= 4 ? 'C' : 'D';
 }
-function _sumChip(text, good) {
-  const s = document.createElement('span');
-  s.className = 'sumx-chip' + (good ? ' g' : '');
-  s.textContent = text;
-  return s;
+// Arcade stat bars — one colour per skill, animated to the 1-10 score.
+const _SKILL_BARS = [
+  ['accuracy', 'ACCURACY 准确', '#1d6f30', '#3FB950'],
+  ['tones',    'TONES 声调',    '#8a2f2a', '#E5534B'],
+  ['vocab',    'VOCAB 词汇',    '#2b5f97', '#58A6FF'],
+  ['fluency',  'FLUENCY 流利',  '#8a6a1a', '#D29922'],
+];
+function _renderSkillBars(d) {
+  const wrap = document.getElementById('sumx-stats');
+  wrap.innerHTML = '';
+  const sk = d.skills || {};
+  const fills = [];
+  _SKILL_BARS.forEach(([key, label, c0, c1]) => {
+    let n = parseInt(sk[key]);
+    if (!(n >= 1 && n <= 10)) n = Math.max(1, Math.min(10, d.overall_score || 5));
+    const row = document.createElement('div'); row.className = 'sumx-statrow';
+    const top = document.createElement('div'); top.className = 'top';
+    const b = document.createElement('b'); b.textContent = label;
+    const v = document.createElement('span'); v.textContent = `${n}/10`;
+    top.appendChild(b); top.appendChild(v);
+    const bar = document.createElement('div'); bar.className = 'sumx-statbar';
+    const fill = document.createElement('i');
+    fill.style.background = `linear-gradient(90deg, ${c0}, ${c1})`;
+    fill.style.boxShadow = `0 0 8px ${c1}80`;
+    bar.appendChild(fill);
+    row.appendChild(top); row.appendChild(bar);
+    wrap.appendChild(row);
+    fills.push([fill, n]);
+  });
+  setTimeout(() => fills.forEach(([el, n]) => { el.style.width = `${n * 10}%`; }), 60);
+  const db = document.getElementById('sumx-debrief');
+  db.innerHTML = '';
+  (d.strengths || []).forEach(s => { const l = document.createElement('div'); l.className = 'ok'; l.textContent = s; db.appendChild(l); });
+  (d.top_mistakes || []).forEach(s => { const l = document.createElement('div'); l.className = 'bad'; l.textContent = s; db.appendChild(l); });
 }
 function _sumVocabRow(v) {
   const row = document.createElement('div'); row.className = 'sumx-vrow';

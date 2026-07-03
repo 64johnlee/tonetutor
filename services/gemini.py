@@ -96,11 +96,16 @@ Return ONLY this JSON (no markdown):
 SUMMARY_PROMPT = """Review this Mandarin practice session and return ONLY this JSON (no markdown):
 {{
   "overall_score": <1-10>,
+  "skills": {{"accuracy": <1-10>, "tones": <1-10>, "vocab": <1-10>, "fluency": <1-10>}},
   "strengths": ["up to 3 things done well"],
   "top_mistakes": ["up to 3 most important mistakes"],
   "vocab_to_review": ["word: meaning", "...up to 5 items"],
   "next_focus": "one sentence on what to practise next"
 }}
+
+"skills" rates the learner's performance this session on each dimension:
+accuracy = saying what they meant correctly; tones = tone/pronunciation control;
+vocab = range of words used; fluency = keeping the conversation flowing.
 
 Session:
 {history}"""
@@ -193,8 +198,17 @@ def get_summary(history: list[dict]) -> dict:
     prompt = SUMMARY_PROMPT.format(history=history_text)
     response = _generate(model, prompt, {"temperature": 0.3, "max_output_tokens": 1024})
     data = _parse_json(response.text)
+    overall = int(data.get("overall_score", 5))
+    raw_skills = data.get("skills") if isinstance(data.get("skills"), dict) else {}
+    skills = {}
+    for k in ("accuracy", "tones", "vocab", "fluency"):
+        try:
+            skills[k] = max(1, min(10, int(raw_skills.get(k, overall))))
+        except (ValueError, TypeError):
+            skills[k] = overall
     return {
-        "overall_score": int(data.get("overall_score", 5)),
+        "overall_score": overall,
+        "skills": skills,
         "strengths": data.get("strengths") or [],
         "top_mistakes": data.get("top_mistakes") or [],
         "vocab_to_review": data.get("vocab_to_review") or [],

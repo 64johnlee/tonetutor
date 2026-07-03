@@ -64,6 +64,7 @@ async def get_session_summary(session_id: str):
     return SessionSummary(
         session_id=session_id,
         overall_score=data.get("overall_score", 5),
+        skills=data.get("skills", {}),
         strengths=data.get("strengths", []),
         top_mistakes=data.get("top_mistakes", []),
         vocab_to_review=data.get("vocab_to_review", []),
