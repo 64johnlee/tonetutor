@@ -20,7 +20,7 @@ class TTSRequest(BaseModel):
     rate: float = 0.9   # speaking rate; frontend sends ~0.6 for the 🐢 slow button
 
 
-_MAX_SENT_CHARS = 100   # Chirp3-HD 400s on sentences without ending punctuation
+_MAX_SENT_CHARS = 50   # Chirp3-HD 400s on unpunctuated runs; live limit is 60-80 hanzi
 
 
 def _breakable(text: str) -> str:
