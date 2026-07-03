@@ -16,6 +16,7 @@ from services.db import get_status, mark_paid, FREE_LIMIT
 router = APIRouter(prefix="/api", tags=["billing"])
 
 LEMON_API_KEY = os.getenv("LEMON_API_KEY", "")
+VIP_TOKEN = os.getenv("VIP_TOKEN", "")
 LEMON_STORE_ID = os.getenv("LEMON_STORE_ID", "")
 LEMON_VARIANT_ID = os.getenv("LEMON_VARIANT_ID", "")
 LEMON_WEBHOOK_SECRET = os.getenv("LEMON_WEBHOOK_SECRET", "")
@@ -47,6 +48,24 @@ async def access(uid: str = ""):
     status = get_status(uid)
     status["billing_enabled"] = True
     return status
+
+
+class VipRequest(BaseModel):
+    uid: str
+    token: str
+
+
+@router.post("/access/vip")
+async def vip_unlock(req: VipRequest):
+    """Owner/testing bypass: visiting /?vip=<VIP_TOKEN> marks that device's uid
+    paid (provider_ref 'vip'), skipping the free-session limit. Disabled unless
+    the VIP_TOKEN env var is set."""
+    if not VIP_TOKEN or not req.token or not hmac.compare_digest(req.token, VIP_TOKEN):
+        raise HTTPException(status_code=403, detail="Invalid token")
+    if not req.uid:
+        raise HTTPException(status_code=400, detail="Missing uid")
+    mark_paid(req.uid, "vip")
+    return {"ok": True, "paid": True}
 
 
 @router.post("/checkout")

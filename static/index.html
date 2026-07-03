@@ -824,9 +824,16 @@ async function startCheckout() {
     if (btn) { btn.disabled = false; btn.textContent = 'Subscribe →'; }
   }
 }
-(function initBilling() {
-  const paid = new URLSearchParams(location.search).get('paid');
-  if (paid) history.replaceState({}, '', location.pathname);
+(async function initBilling() {
+  const params = new URLSearchParams(location.search);
+  const paid = params.get('paid'), vip = params.get('vip');
+  if (paid || vip) history.replaceState({}, '', location.pathname);
+  if (vip) {   // owner/testing bypass: /?vip=<token> comps this device's uid
+    try {
+      await fetch(`${API}/api/access/vip`, { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ uid: getUid(), token: vip }) });
+    } catch(_) {}
+  }
   refreshAccess();
   if (paid === 'success') {
     let n = 0;
