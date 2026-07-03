@@ -39,6 +39,10 @@ def _breakable(text: str) -> str:
     return "".join(out)
 
 
+_PRIMARY_VOICE = "cmn-CN-Chirp3-HD-Aoede"   # Google's latest AI female Mandarin voice
+_FALLBACK_VOICE = "cmn-CN-Wavenet-A"        # stable classic voice when Chirp3-HD flakes
+
+
 @router.post("/tts")
 async def synthesize_speech(req: TTSRequest):
     if not req.text.strip():
@@ -46,20 +50,22 @@ async def synthesize_speech(req: TTSRequest):
 
     client = _get_tts_client()
     synthesis_input = texttospeech.SynthesisInput(text=_breakable(req.text))
-    voice = texttospeech.VoiceSelectionParams(
-        language_code="cmn-CN",
-        name="cmn-CN-Chirp3-HD-Aoede",  # Google's latest AI female Mandarin voice
-    )
     audio_config = texttospeech.AudioConfig(
         audio_encoding=texttospeech.AudioEncoding.MP3,
         speaking_rate=max(0.25, min(2.0, req.rate)),
     )
 
-    try:
-        response = client.synthesize_speech(
-            input=synthesis_input, voice=voice, audio_config=audio_config
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"TTS error: {str(e)}")
-
-    return Response(content=response.audio_content, media_type="audio/mpeg")
+    # Chirp3-HD non-deterministically rejects the same text with 'sentences are
+    # too long' (verified live: identical request alternates 200/400). Retry it
+    # once, then fall back to WaveNet so the learner always gets audio.
+    last_err = None
+    for voice_name in (_PRIMARY_VOICE, _PRIMARY_VOICE, _FALLBACK_VOICE):
+        voice = texttospeech.VoiceSelectionParams(language_code="cmn-CN", name=voice_name)
+        try:
+            response = client.synthesize_speech(
+                input=synthesis_input, voice=voice, audio_config=audio_config
+            )
+            return Response(content=response.audio_content, media_type="audio/mpeg")
+        except Exception as e:
+            last_err = e
+    raise HTTPException(status_code=500, detail=f"TTS error: {str(last_err)}")
