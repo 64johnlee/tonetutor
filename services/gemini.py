@@ -11,9 +11,9 @@ vertexai.init(project="disco-module-487411-m0", location="us-central1")
 
 _model_cache = {}
 
-# User-facing calls (chat, summary, assessment, drills) use Flash-Lite — thinking is
-# OFF by default so latency stays interactive (full Flash took ~8s+ per summary).
-# Full Flash remains for non-blocking / low-frequency paths (copilot, shadow scoring).
+# ALL calls use Flash-Lite: thinking is OFF by default so latency stays
+# interactive AND max_output_tokens isn't eaten by thought tokens (full Flash's
+# thinking consumed the budget and truncated copilot's JSON mid-string).
 FAST_MODEL = "gemini-2.5-flash-lite"
 QUALITY_MODEL = "gemini-2.5-flash"
 
@@ -282,7 +282,7 @@ def copilot_turn(
     weak_points: str,
     question: str,
 ) -> dict:
-    model = _get_model()
+    model = _get_model(FAST_MODEL)
     lvl_desc = HSK_DESCRIPTIONS[level]
     history_lines = []
     for t in history:
@@ -295,7 +295,7 @@ def copilot_turn(
         history=history_text,
         question=question,
     )
-    response = _generate(model, prompt, {"temperature": 0.4, "max_output_tokens": 1024})
+    response = _generate(model, prompt, {"temperature": 0.4, "max_output_tokens": 2048})
     data = _parse_json(response.text)
 
     examples = []
@@ -380,7 +380,7 @@ def score_shadow(target_zh: str, attempt: str) -> dict:
     if not attempt.strip():
         return {"score": 0, "passed": False,
                 "feedback": "I didn't catch that — tap the mic and say it again.", "missed": []}
-    model = _get_model()
+    model = _get_model(FAST_MODEL)
     prompt = DRILL_SCORE_PROMPT.format(target=target_zh, attempt=attempt)
     response = _generate(model, prompt, {"temperature": 0.2, "max_output_tokens": 512})
     data = _parse_json(response.text)
