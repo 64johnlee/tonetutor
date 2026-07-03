@@ -98,7 +98,7 @@ def get_opening(topic: Topic, level: HskLevel) -> dict:
     scenario = TOPIC_DESCRIPTIONS[topic]
     lvl_desc = HSK_DESCRIPTIONS[level]
     prompt = OPENING_PROMPT.format(scenario=scenario, level=lvl_desc)
-    response = model.generate_content(prompt, generation_config={"temperature": 0.7})
+    response = model.generate_content(prompt, generation_config={"temperature": 0.7, "response_mime_type": "application/json"})
     data = _parse_json(response.text)
     return {
         "reply_zh": _safe_str(data, "reply_zh", "你好！"),
@@ -138,7 +138,7 @@ def chat_turn(
         history=history_text,
         user_message=user_message,
     )
-    response = model.generate_content(prompt, generation_config={"temperature": 0.7})
+    response = model.generate_content(prompt, generation_config={"temperature": 0.7, "response_mime_type": "application/json"})
     data = _parse_json(response.text)
 
     grade_raw = data.get("grade") or {}
@@ -166,7 +166,7 @@ def get_summary(history: list[dict]) -> dict:
         for t in history
     )
     prompt = SUMMARY_PROMPT.format(history=history_text)
-    response = model.generate_content(prompt, generation_config={"temperature": 0.3})
+    response = model.generate_content(prompt, generation_config={"temperature": 0.3, "response_mime_type": "application/json"})
     data = _parse_json(response.text)
     return {
         "overall_score": int(data.get("overall_score", 5)),
@@ -206,7 +206,7 @@ def get_level_assessment(history: list[dict]) -> dict:
         for t in history
     )
     prompt = ASSESS_PROMPT.format(history=history_text)
-    response = model.generate_content(prompt, generation_config={"temperature": 0.3})
+    response = model.generate_content(prompt, generation_config={"temperature": 0.3, "response_mime_type": "application/json"})
     data = _parse_json(response.text)
 
     level = _safe_str(data, "estimated_level", "HSK 1").strip()
@@ -270,7 +270,7 @@ def copilot_turn(
         history=history_text,
         question=question,
     )
-    response = model.generate_content(prompt, generation_config={"temperature": 0.4})
+    response = model.generate_content(prompt, generation_config={"temperature": 0.4, "response_mime_type": "application/json"})
     data = _parse_json(response.text)
 
     examples = []
@@ -320,7 +320,7 @@ def get_drill_sentences(level: HskLevel, weak_points: str, n: int = 10) -> list[
         weak_points=weak_points.strip() or "general tones and sentence rhythm",
         n=n,
     )
-    response = model.generate_content(prompt, generation_config={"temperature": 0.7})
+    response = model.generate_content(prompt, generation_config={"temperature": 0.7, "response_mime_type": "application/json"})
     data = _parse_json(response.text)
     out = []
     for s in (data.get("sentences") or [])[:n]:
@@ -357,7 +357,7 @@ def score_shadow(target_zh: str, attempt: str) -> dict:
                 "feedback": "I didn't catch that — tap the mic and say it again.", "missed": []}
     model = _get_model()
     prompt = DRILL_SCORE_PROMPT.format(target=target_zh, attempt=attempt)
-    response = model.generate_content(prompt, generation_config={"temperature": 0.2})
+    response = model.generate_content(prompt, generation_config={"temperature": 0.2, "response_mime_type": "application/json"})
     data = _parse_json(response.text)
     try:
         score = int(data.get("score", 0))
@@ -402,7 +402,7 @@ def get_word_drill(level: HskLevel, weak_points: str, n: int = 8) -> list[dict]:
         weak_points=weak_points.strip() or "common everyday vocabulary and measure words",
         n=n,
     )
-    response = model.generate_content(prompt, generation_config={"temperature": 0.7})
+    response = model.generate_content(prompt, generation_config={"temperature": 0.7, "response_mime_type": "application/json"})
     data = _parse_json(response.text)
     out = []
     for it in (data.get("items") or [])[:n]:
