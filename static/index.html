@@ -494,6 +494,7 @@ html, body {
     <div class="nav-sep"></div>
     <div class="nav-context" id="sum-context">Session Summary</div>
     <div class="nav-spacer"></div>
+    <button class="nav-icon-btn" onclick="openNotebook()">📓 Notebook</button>
     <button class="nav-icon-btn" onclick="location.reload()">← New session</button>
   </nav>
 
@@ -514,13 +515,15 @@ html, body {
 
       <div class="sum-block"><div class="sum-block-title">✅ Strengths</div><ul id="sum-strengths"></ul></div>
       <div class="sum-block"><div class="sum-block-title">⚠️ Top mistakes</div><ul id="sum-mistakes"></ul></div>
-      <div class="sum-block"><div class="sum-block-title">📚 Vocab to review</div><ul id="sum-vocab"></ul></div>
+      <div class="sum-block"><div class="sum-block-title">📚 Vocab to review</div><ul id="sum-vocab"></ul><button class="wd-hear" id="sum-vocab-save" style="margin-top:.6rem" onclick="saveVocabToNotebook()">⭐ Save these to my notebook</button></div>
       <div class="sum-block"><div class="sum-block-title">🎯 Next focus</div><div class="sum-focus-body" id="sum-focus"></div></div>
 
       <div class="tt-streak" id="sum-streak-line"></div>
       <div class="sum-cta">
+        <button class="btn-new" onclick="startDrill()">🔁 Retrain: Shadow Drill →</button>
+        <button class="btn-share" onclick="startWordDrill()">📝 Word Drill — tap the missing word →</button>
         <button class="btn-share" onclick="shareScore()">📤 Share my score</button>
-        <button class="btn-new"   onclick="location.reload()">Start a new session</button>
+        <button class="btn-share" onclick="location.reload()">Start a new session</button>
       </div>
     </div>
 
@@ -537,6 +540,7 @@ html, body {
     <div class="nav-sep"></div>
     <div class="nav-context">Your HSK level</div>
     <div class="nav-spacer"></div>
+    <button class="nav-icon-btn" onclick="openNotebook()">📓 Notebook</button>
     <button class="nav-icon-btn" onclick="location.reload()">← New test</button>
   </nav>
 
@@ -747,7 +751,7 @@ html, body {
     <div class="nav-sep"></div>
     <div class="nav-context">📓 Notebook</div>
     <div class="nav-spacer"></div>
-    <button class="nav-icon-btn" onclick="showScreen('screen-setup')">← Back</button>
+    <button class="nav-icon-btn" onclick="showScreen(_nbReturn)">← Back</button>
   </nav>
   <div class="wd-body">
     <div class="nb-actions"><button class="wd-hear" onclick="nbAddManual()">＋ Write a note</button></div>
@@ -1193,6 +1197,7 @@ function appendLoading() {
 }
 
 // ── Summary ───────────────────────────────────────────────────────────────
+let _lastSummary = null;
 async function showSummary() {
   if (!state.sessionId) return;
   showScreen('screen-summary');
@@ -1204,15 +1209,21 @@ async function showSummary() {
     const res = await fetch(`${API}/api/session/${state.sessionId}/summary`);
     if (!res.ok) throw new Error(await res.text());
     const d = await res.json();
+    _lastSummary = d;
     document.getElementById('sum-score-label').textContent = `${cap(state.topic)} · ${state.level} session`;
     fillList('sum-strengths', d.strengths);
     fillList('sum-mistakes', d.top_mistakes);
     fillList('sum-vocab', d.vocab_to_review);
+    const vs = document.getElementById('sum-vocab-save');
+    vs.style.display = (d.vocab_to_review || []).length ? 'inline-block' : 'none';
+    vs.disabled = false; vs.textContent = '⭐ Save these to my notebook';
     document.getElementById('sum-focus').textContent = d.next_focus || '';
     document.getElementById('sum-loading').style.display = 'none';
     document.getElementById('sum-content').style.display = 'block';
     _showStreakLine('sum-streak-line');
     animateScore(d.overall_score);
+    prefetchDrill();   // warm both drills here too — practice mode ends on this screen
+    prefetchWord();
     if (autoSpeak && d.next_focus) setTimeout(()=>speak(d.next_focus), 1000);
   } catch(e) {
     document.getElementById('sum-loading').style.display = 'none';
@@ -1487,8 +1498,15 @@ const DRILL = { sentences: [], idx: 0, scores: [] };
 // The drill set is prefetched in the background the moment the score card shows,
 // so tapping "Retrain" feels instant (generation overlaps with reading the card).
 let _drillPrefetch = null;
+// Weak points feed the drill generators: test mode has the assessment's list;
+// practice mode falls back to the session summary's mistakes + next focus.
+function _weakPoints() {
+  if (_lastAssessment && (_lastAssessment.weaknesses || []).length) return _lastAssessment.weaknesses;
+  if (_lastSummary) return [...(_lastSummary.top_mistakes || []), _lastSummary.next_focus || ''].filter(Boolean);
+  return [];
+}
 function _fetchDrillSet() {
-  const weak = (_lastAssessment && _lastAssessment.weaknesses) || [];
+  const weak = _weakPoints();
   return fetch(`${API}/api/drill/generate`, {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ level: state.level, weak_points: weak.join('; ') })
@@ -1730,7 +1748,7 @@ const WORD = { items: [], idx: 0, correct: 0, selected: null, checked: false };
 let _wordPrefetch = null;
 
 function _fetchWordSet() {
-  const weak = (_lastAssessment && _lastAssessment.weaknesses) || [];
+  const weak = _weakPoints();
   return fetch(`${API}/api/drill/words`, {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ level: state.level, weak_points: weak.join('; ') })
@@ -1927,7 +1945,20 @@ function renderNbCount() {
   const n = _nbLoad().length;
   btn.textContent = n ? `📓 Notebook (${n})` : '📓 Notebook';
 }
-function openNotebook() { renderNotebook(); showScreen('screen-notebook'); }
+let _nbReturn = 'screen-setup';   // notebook Back returns to whichever screen opened it
+function openNotebook() {
+  const cur = document.querySelector('.screen.active');
+  if (cur && cur.id !== 'screen-notebook') _nbReturn = cur.id;
+  renderNotebook(); showScreen('screen-notebook');
+}
+function saveVocabToNotebook() {
+  const vocab = (_lastSummary && _lastSummary.vocab_to_review) || [];
+  let added = 0;
+  vocab.forEach(v => { if (v && nbAdd({ zh: v, pinyin: '', en: '', focus: 'vocab to review' })) added++; });
+  const btn = document.getElementById('sum-vocab-save');
+  btn.textContent = added ? `✓ Saved ${added} — open 📓 Notebook above` : '✓ Already in your notebook';
+  btn.disabled = true;
+}
 function renderNotebook() {
   const list = _nbLoad(), wrap = document.getElementById('nb-list');
   wrap.innerHTML = '';
