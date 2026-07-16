@@ -66,6 +66,18 @@
 }
 #theme-toggle:hover { border-color: var(--border-hi); }
 
+#feedback-btn {
+  position: fixed; top: 6.2rem; right: 0.75rem; z-index: 900;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--card); border: 1px solid var(--border);
+  font-size: 0.95rem; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: border-color .13s;
+}
+#feedback-btn:hover { border-color: var(--border-hi); }
+.fb-input { width:100%; background:var(--card); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text); font-family:inherit; font-size:.88rem; padding:.55rem .7rem; margin-top:.55rem; resize:vertical; }
+.fb-input:focus { outline:none; border-color:var(--border-hi); }
+
 html, body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg);
@@ -418,6 +430,20 @@ html, body {
 </head>
 <body>
 <button id="theme-toggle" onclick="toggleTheme()" aria-label="Switch between dark and light mode" title="Switch theme">☀️</button>
+<button id="feedback-btn" onclick="openFeedback()" aria-label="Help and feedback" title="Help & feedback">💬</button>
+
+<div id="feedback-modal" class="paywall-overlay" role="dialog" aria-modal="true" aria-label="Help and feedback">
+  <div class="paywall-card" style="text-align:left">
+    <div class="paywall-title">💬 Help & feedback</div>
+    <div class="paywall-sub" style="margin-bottom:.4rem">Found a bug? Feature idea? A grade felt wrong? It goes straight to the founder — I read every message.</div>
+    <textarea id="fb-message" class="fb-input" rows="4" maxlength="2000" placeholder="What's on your mind?"></textarea>
+    <input id="fb-contact" class="fb-input" type="email" maxlength="200" placeholder="Your email (optional — so I can reply)"/>
+    <input id="fb-website" class="fb-input" style="display:none" tabindex="-1" autocomplete="off"/>
+    <div id="fb-status" style="display:none;font-size:.82rem;margin-top:.5rem"></div>
+    <button id="fb-send" class="tour-next" style="width:100%;margin-top:.8rem" onclick="sendFeedback()">Send message</button>
+    <div style="text-align:center"><button class="paywall-close" onclick="closeFeedback()">Close</button></div>
+  </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
      SETUP
@@ -860,6 +886,41 @@ function toggleTheme() {
   _applyTheme(next);
 }
 _applyTheme(localStorage.getItem('tt_theme') || 'dark');
+
+// ── Help & feedback (support tickets -> /api/feedback) ────────────────────
+function openFeedback() {
+  document.getElementById('fb-status').style.display = 'none';
+  document.getElementById('feedback-modal').style.display = 'flex';
+  document.getElementById('fb-message').focus();
+}
+function closeFeedback() { document.getElementById('feedback-modal').style.display = 'none'; }
+async function sendFeedback() {
+  const msg = document.getElementById('fb-message');
+  const status = document.getElementById('fb-status');
+  const btn = document.getElementById('fb-send');
+  const text = msg.value.trim();
+  status.style.display = 'block';
+  if (text.length < 5) { status.style.color = 'var(--red)'; status.textContent = 'Please write a few more words.'; return; }
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const res = await fetch(`${API}/api/feedback`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        uid: getUid(), message: text,
+        contact: document.getElementById('fb-contact').value.trim(),
+        website: document.getElementById('fb-website').value,
+      }),
+    });
+    if (!res.ok) throw new Error((await res.json()).detail || 'Something went wrong');
+    status.style.color = 'var(--green)';
+    status.textContent = 'Sent — thank you! I read every message. 谢谢 🙏';
+    msg.value = '';
+  } catch (e) {
+    status.style.color = 'var(--red)';
+    status.textContent = 'Could not send: ' + (e.message || 'please try again later');
+  }
+  btn.disabled = false; btn.textContent = 'Send message';
+}
 
 function getUid() {
   let id = localStorage.getItem('tt_uid');

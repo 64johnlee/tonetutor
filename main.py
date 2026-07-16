@@ -14,6 +14,7 @@ from api.tts import router as tts_router
 from api.billing import router as billing_router
 from api.events import router as events_router
 from api.drill import router as drill_router
+from api.feedback import router as feedback_router
 
 app = FastAPI(title="ToneTutor", version="0.1.0")
 
@@ -32,6 +33,7 @@ app.include_router(tts_router)
 app.include_router(billing_router)
 app.include_router(events_router)
 app.include_router(drill_router)
+app.include_router(feedback_router)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
