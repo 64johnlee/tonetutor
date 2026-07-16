@@ -54,14 +54,11 @@ async def submit_feedback(body: FeedbackIn):
 
     now = datetime.now(timezone.utc)
     since = now - timedelta(days=1)
-    recent = list(
-        _client().collection("feedback")
-        .where("uid", "==", uid)
-        .where("ts", ">=", since)
-        .limit(DAILY_LIMIT_PER_UID)
-        .stream()
-    )
-    if len(recent) >= DAILY_LIMIT_PER_UID:
+    # uid-only filter stays on Firestore's auto-index (uid+ts range would need a
+    # composite index); recency is counted client-side over a tiny result set.
+    recent = _client().collection("feedback").where("uid", "==", uid).limit(50).stream()
+    recent_count = sum(1 for snap in recent if (snap.to_dict() or {}).get("ts") and snap.to_dict()["ts"] >= since)
+    if recent_count >= DAILY_LIMIT_PER_UID:
         raise HTTPException(status_code=429, detail="Too many messages today — please try again tomorrow")
 
     _client().collection("feedback").add({
