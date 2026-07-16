@@ -32,29 +32,29 @@
   --radius-lg:   16px;
 }
 
-/* Light theme — same GitHub-derived palette, inverted */
+/* Light theme — warm cream, not clinical white */
 [data-theme="light"] {
-  --bg:          #F6F8FA;
-  --surface:     #FFFFFF;
-  --card:        #EFF2F6;
-  --border:      rgba(27,31,36,0.13);
-  --border-hi:   rgba(27,31,36,0.26);
-  --red:         #CF4A43;
-  --red-dim:     rgba(207,74,67,0.10);
-  --red-hover:   #B93E38;
-  --text:        #1F2328;
-  --sub:         #59636E;
-  --muted:       #B6BEC6;
-  --green:       #1A7F37;
-  --green-dim:   rgba(26,127,55,0.10);
-  --amber:       #9A6700;
-  --amber-dim:   rgba(154,103,0,0.10);
-  --blue:        #0969DA;
+  --bg:          #F8F2E7;
+  --surface:     #FFFCF4;
+  --card:        #F1E9D8;
+  --border:      rgba(74,60,34,0.15);
+  --border-hi:   rgba(74,60,34,0.30);
+  --red:         #C94840;
+  --red-dim:     rgba(201,72,64,0.11);
+  --red-hover:   #B23A33;
+  --text:        #2E2618;
+  --sub:         #71654F;
+  --muted:       #C8BCA3;
+  --green:       #237B3C;
+  --green-dim:   rgba(35,123,60,0.11);
+  --amber:       #96660A;
+  --amber-dim:   rgba(150,102,10,0.11);
+  --blue:        #0F62C7;
 }
 
 /* The two blurred bars hardcode the dark bg for the frosted-glass effect */
-[data-theme="light"] .topnav { background: rgba(246,248,250,0.85); }
-[data-theme="light"] .input-dock { background: rgba(246,248,250,0.9); }
+[data-theme="light"] .topnav { background: rgba(248,242,231,0.85); }
+[data-theme="light"] .input-dock { background: rgba(248,242,231,0.9); }
 
 #theme-toggle {
   position: fixed; top: 3.4rem; right: 0.75rem; z-index: 900;
@@ -401,7 +401,11 @@ html, body {
 /* Spotlight tour: dim screen, highlight one control at a time */
 .tour { position:fixed; inset:0; z-index:70; display:none; }
 .tour.open { display:block; }
-.tour-hole { position:absolute; border-radius:10px; box-shadow:0 0 0 9999px rgba(0,0,0,.72); transition:left .25s ease, top .25s ease, width .25s ease, height .25s ease; pointer-events:none; }
+.tour-hole { position:absolute; border-radius:10px; box-shadow:0 0 0 3px var(--red), 0 0 0 7px rgba(229,83,75,.35), 0 0 26px 6px rgba(229,83,75,.45), 0 0 0 9999px rgba(0,0,0,.72); animation:tour-pulse 1.6s ease-in-out infinite; transition:left .25s ease, top .25s ease, width .25s ease, height .25s ease; pointer-events:none; }
+@keyframes tour-pulse {
+  0%,100% { box-shadow:0 0 0 3px var(--red), 0 0 0 7px rgba(229,83,75,.35), 0 0 26px 6px rgba(229,83,75,.45), 0 0 0 9999px rgba(0,0,0,.72); }
+  50%     { box-shadow:0 0 0 3px var(--red), 0 0 0 12px rgba(229,83,75,.18), 0 0 40px 12px rgba(229,83,75,.6), 0 0 0 9999px rgba(0,0,0,.72); }
+}
 .tour-pop { position:absolute; width:min(280px,82vw); background:var(--card); border:1px solid var(--border-hi); border-radius:14px; padding:.85rem 1rem 1rem; box-shadow:0 12px 40px rgba(0,0,0,.5); transition:left .2s ease, top .2s ease; }
 .tour-step { font-size:.72rem; color:var(--sub); font-weight:600; letter-spacing:.04em; }
 .tour-title { font-size:1rem; font-weight:700; color:var(--text); margin:.15rem 0 .3rem; }
