@@ -77,6 +77,8 @@
 #feedback-btn:hover { border-color: var(--border-hi); }
 .fb-input { width:100%; background:var(--card); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text); font-family:inherit; font-size:.88rem; padding:.55rem .7rem; margin-top:.55rem; resize:vertical; }
 .fb-input:focus { outline:none; border-color:var(--border-hi); }
+#reward-toast { position:fixed; left:50%; bottom:5.5rem; transform:translateX(-50%) translateY(20px); z-index:950; background:var(--surface); border:1px solid var(--green); color:var(--text); border-radius:99px; padding:.55rem 1.1rem; font-size:.85rem; font-weight:600; opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease; box-shadow:0 8px 30px rgba(0,0,0,.4); }
+#reward-toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
 
 html, body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -431,6 +433,7 @@ html, body {
 <body>
 <button id="theme-toggle" onclick="toggleTheme()" aria-label="Switch between dark and light mode" title="Switch theme">☀️</button>
 <button id="feedback-btn" onclick="openFeedback()" aria-label="Help and feedback" title="Help & feedback">💬</button>
+<div id="reward-toast" role="status"></div>
 
 <div id="feedback-modal" class="paywall-overlay" role="dialog" aria-modal="true" aria-label="Help and feedback">
   <div class="paywall-card" style="text-align:left">
@@ -659,6 +662,7 @@ html, body {
         <button class="btn-new" onclick="shareCard()">📤 Share my result</button>
         <button class="btn-share" onclick="saveCard()">📥 Save image</button>
         <button class="btn-share" id="copy-btn" onclick="copyCaption()">📋 Copy caption</button>
+        <div class="cta-note" id="share-reward-hint" style="margin-top:.55rem;font-weight:600;color:var(--amber)">🎁 Share your card → +1 free session</div>
         <button class="btn-share" onclick="practiceWeakPoints()">🎯 Practice my weak points →</button>
         <button class="btn-new" onclick="startDrill()">🔁 Retrain: Shadow Drill →</button>
         <button class="btn-share" onclick="startWordDrill()">📝 Word Drill — tap the missing word →</button>
@@ -894,6 +898,60 @@ function openFeedback() {
   document.getElementById('fb-message').focus();
 }
 function closeFeedback() { document.getElementById('feedback-modal').style.display = 'none'; }
+
+// ── Growth rewards: share = +1 session, paywall email = +3 ────────────────
+let _toastTimer = null;
+function showRewardToast(text) {
+  const t = document.getElementById('reward-toast');
+  t.textContent = text;
+  t.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+async function claimShareReward() {
+  try {
+    const res = await fetch(`${API}/api/share-reward`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ uid: getUid() }),
+    });
+    const d = await res.json();
+    if (d.granted) {
+      showRewardToast('🎁 +1 free session unlocked — thanks for sharing!');
+      const hint = document.getElementById('share-reward-hint');
+      if (hint) hint.textContent = '✅ Bonus session added — 谢谢!';
+      refreshAccess();
+    }
+  } catch (_) {}
+}
+async function claimEmailSessions() {
+  const input = document.getElementById('pw-email');
+  const status = document.getElementById('pw-email-status');
+  const btn = document.getElementById('pw-email-btn');
+  const email = input.value.trim();
+  status.style.display = 'block';
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) {
+    status.style.color = 'var(--red)'; status.textContent = 'Please enter a valid email.'; return;
+  }
+  btn.disabled = true; btn.textContent = 'Unlocking…';
+  try {
+    const res = await fetch(`${API}/api/paywall-email`, {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ uid: getUid(), email }),
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.detail || 'Something went wrong');
+    if (d.granted) {
+      status.style.color = 'var(--green)'; status.textContent = '✅ 3 sessions added — enjoy!';
+      refreshAccess();
+      setTimeout(() => { hidePaywall(); showRewardToast('🎁 3 free sessions unlocked!'); }, 1100);
+    } else {
+      status.style.color = 'var(--amber)'; status.textContent = 'This bonus was already claimed on this device.';
+    }
+  } catch (e) {
+    status.style.color = 'var(--red)'; status.textContent = e.message || 'Could not unlock — try again later.';
+  }
+  btn.disabled = false; btn.textContent = 'Unlock 3 free sessions 🎁';
+}
 async function sendFeedback() {
   const msg = document.getElementById('fb-message');
   const status = document.getElementById('fb-status');
@@ -1603,6 +1661,7 @@ function saveCard() {
   a.href = _cardDataUrl; a.download = 'my-hsk-level.png';
   document.body.appendChild(a); a.click(); a.remove();
   track('card_saved');
+  claimShareReward();
 }
 
 async function shareCard() {
@@ -1611,9 +1670,9 @@ async function shareCard() {
     if (_cardDataUrl && navigator.canShare) {
       const blob = await (await fetch(_cardDataUrl)).blob();
       const file = new File([blob], 'my-hsk-level.png', { type: 'image/png' });
-      if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: caption }); track('card_shared', { via: 'file' }); return; }
+      if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: caption }); track('card_shared', { via: 'file' }); claimShareReward(); return; }
     }
-    if (navigator.share) { await navigator.share({ text: caption, url: SHARE_URL }); track('card_shared', { via: 'url' }); return; }
+    if (navigator.share) { await navigator.share({ text: caption, url: SHARE_URL }); track('card_shared', { via: 'url' }); claimShareReward(); return; }
   } catch(_) { return; }   // user cancelled or share failed → stop quietly
   copyCaption();           // no native share available → fall back to copy
 }
@@ -1624,6 +1683,7 @@ function copyCaption() {
   if (navigator.clipboard) {
     navigator.clipboard.writeText(caption).then(() => {
       track('caption_copied');
+      claimShareReward();
       if (btn) { const o = btn.textContent; btn.textContent = '✅ Copied!'; setTimeout(() => { btn.textContent = o; }, 2200); }
     }).catch(() => alert(caption));
   } else { track('caption_copied'); alert(caption); }
@@ -2240,6 +2300,13 @@ renderNbCount();
       <li>Cancel anytime</li>
     </ul>
     <button class="btn-start" id="subscribe-btn" onclick="startCheckout()">Subscribe →</button>
+    <div style="font-size:.72rem;color:var(--sub);margin-top:.55rem">🔒 Secure checkout · powered by Lemon Squeezy · cancel anytime</div>
+    <div id="pw-email-wrap" style="border-top:1px solid var(--border);margin-top:.95rem;padding-top:.9rem;text-align:left">
+      <div style="font-size:.82rem;color:var(--sub);line-height:1.45">Not ready yet? Leave your email and get <b style="color:var(--text)">3 more free sessions</b> on the house:</div>
+      <input id="pw-email" class="fb-input" type="email" maxlength="200" placeholder="you@email.com"/>
+      <button class="tour-next" id="pw-email-btn" style="width:100%;margin-top:.55rem" onclick="claimEmailSessions()">Unlock 3 free sessions 🎁</button>
+      <div id="pw-email-status" style="display:none;font-size:.8rem;margin-top:.45rem"></div>
+    </div>
     <button class="paywall-close" onclick="hidePaywall()">Maybe later</button>
   </div>
 </div>

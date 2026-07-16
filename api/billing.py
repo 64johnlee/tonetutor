@@ -11,7 +11,9 @@ import hashlib
 import httpx
 from fastapi import APIRouter, Request, HTTPException
 from pydantic import BaseModel
-from services.db import get_status, mark_paid, FREE_LIMIT
+import re
+
+from services.db import get_status, mark_paid, grant_bonus, store_lead, FREE_LIMIT
 
 router = APIRouter(prefix="/api", tags=["billing"])
 
@@ -66,6 +68,47 @@ async def vip_unlock(req: VipRequest):
         raise HTTPException(status_code=400, detail="Missing uid")
     mark_paid(req.uid, "vip")
     return {"ok": True, "paid": True}
+
+
+class ShareRewardRequest(BaseModel):
+    uid: str
+
+
+@router.post("/share-reward")
+async def share_reward(req: ShareRewardRequest):
+    """One-time +1 free session for sharing the HSK card (viral-loop incentive)."""
+    if not req.uid:
+        raise HTTPException(status_code=400, detail="Missing uid")
+    if not _billing_on():
+        return {"granted": False, "billing_enabled": False}
+    result = grant_bonus(req.uid, "share")
+    result["billing_enabled"] = True
+    return result
+
+
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]{2,}$")
+
+
+class PaywallEmailRequest(BaseModel):
+    uid: str
+    email: str
+
+
+@router.post("/paywall-email")
+async def paywall_email(req: PaywallEmailRequest):
+    """Paywall fallback: leave an email, get a one-time +3 free sessions."""
+    if not req.uid:
+        raise HTTPException(status_code=400, detail="Missing uid")
+    email = req.email.strip()[:200]
+    if not EMAIL_RE.match(email):
+        raise HTTPException(status_code=400, detail="Please enter a valid email")
+    if not _billing_on():
+        return {"granted": False, "billing_enabled": False}
+    result = grant_bonus(req.uid, "email")
+    if result["granted"]:
+        store_lead(req.uid, email)
+    result["billing_enabled"] = True
+    return result
 
 
 @router.post("/checkout")
