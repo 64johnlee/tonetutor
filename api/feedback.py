@@ -8,7 +8,7 @@ hidden-404 behaviour as /api/ev/stats).
 import os
 from datetime import datetime, timezone, timedelta
 
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from google.cloud import firestore
 
@@ -50,7 +50,7 @@ CONFIRMATION_BODY = (
 
 
 @router.post("")
-async def submit_feedback(body: FeedbackIn, background: BackgroundTasks):
+async def submit_feedback(body: FeedbackIn):
     uid = body.uid.strip()
     message = body.message.strip()
     contact = body.contact.strip()[:MAX_CONTACT_LEN]
@@ -83,15 +83,13 @@ async def submit_feedback(body: FeedbackIn, background: BackgroundTasks):
         "day": now.strftime("%Y-%m-%d"),
     })
 
-    # Best-effort emails after the response: confirmation to the submitter
-    # (when they left a contact) and an instant heads-up to the owner.
+    # Send inline (not BackgroundTasks): Cloud Run throttles CPU after the
+    # response, which silently freezes post-response coroutines. A feedback
+    # POST can afford the extra second; both sends are still best-effort.
     if contact:
-        background.add_task(
-            send_email, contact, CONFIRMATION_SUBJECT,
-            CONFIRMATION_BODY.format(message=message),
-        )
-    background.add_task(
-        notify_owner,
+        await send_email(contact, CONFIRMATION_SUBJECT,
+                         CONFIRMATION_BODY.format(message=message))
+    await notify_owner(
         f"🎫 New ToneTutor ticket — {contact or uid[:12]}",
         f"Message:\n{message}\n\nContact: {contact or '(none left)'}\nuid: {uid}\nTime: {now.isoformat()}",
         contact,  # reply_to: hit Reply to answer the user directly

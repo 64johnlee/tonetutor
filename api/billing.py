@@ -96,7 +96,7 @@ class PaywallEmailRequest(BaseModel):
 
 
 @router.post("/paywall-email")
-async def paywall_email(req: PaywallEmailRequest, background: BackgroundTasks):
+async def paywall_email(req: PaywallEmailRequest):
     """Paywall fallback: leave an email, get a one-time +3 free sessions."""
     if not req.uid:
         raise HTTPException(status_code=400, detail="Missing uid")
@@ -108,8 +108,8 @@ async def paywall_email(req: PaywallEmailRequest, background: BackgroundTasks):
     result = grant_bonus(req.uid, "email")
     if result["granted"]:
         store_lead(req.uid, email)
-        background.add_task(
-            notify_owner,
+        # Inline send — Cloud Run freezes post-response BackgroundTasks (CPU throttling).
+        await notify_owner(
             f"💌 New ToneTutor lead — {email}",
             f"A paywall visitor left their email for +3 free sessions.\n\n"
             f"Email: {email}\nuid: {req.uid}\n\n"
