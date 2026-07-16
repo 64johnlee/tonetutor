@@ -9,11 +9,12 @@ import json
 import hmac
 import hashlib
 import httpx
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Request, HTTPException
 from pydantic import BaseModel
 import re
 
 from services.db import get_status, mark_paid, grant_bonus, store_lead, FREE_LIMIT
+from services.mailer import notify_owner
 
 router = APIRouter(prefix="/api", tags=["billing"])
 
@@ -95,7 +96,7 @@ class PaywallEmailRequest(BaseModel):
 
 
 @router.post("/paywall-email")
-async def paywall_email(req: PaywallEmailRequest):
+async def paywall_email(req: PaywallEmailRequest, background: BackgroundTasks):
     """Paywall fallback: leave an email, get a one-time +3 free sessions."""
     if not req.uid:
         raise HTTPException(status_code=400, detail="Missing uid")
@@ -107,6 +108,14 @@ async def paywall_email(req: PaywallEmailRequest):
     result = grant_bonus(req.uid, "email")
     if result["granted"]:
         store_lead(req.uid, email)
+        background.add_task(
+            notify_owner,
+            f"💌 New ToneTutor lead — {email}",
+            f"A paywall visitor left their email for +3 free sessions.\n\n"
+            f"Email: {email}\nuid: {req.uid}\n\n"
+            f"They liked the product enough to use every free session — worth a personal note.",
+            email,
+        )
     result["billing_enabled"] = True
     return result
 

@@ -8,9 +8,11 @@ hidden-404 behaviour as /api/ev/stats).
 import os
 from datetime import datetime, timezone, timedelta
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from pydantic import BaseModel
 from google.cloud import firestore
+
+from services.mailer import send_email, notify_owner
 
 router = APIRouter(prefix="/api/feedback", tags=["feedback"])
 
@@ -36,8 +38,19 @@ class FeedbackIn(BaseModel):
     website: str = ""  # honeypot — real users never fill this
 
 
+CONFIRMATION_SUBJECT = "Got your message — ToneTutor"
+CONFIRMATION_BODY = (
+    "你好!\n\n"
+    "Thanks for writing in — your message reached me (a real person, not a bot).\n"
+    "I read every message and will reply within 24-48 hours.\n\n"
+    "Your message:\n{message}\n\n"
+    "— John, founder of ToneTutor\n"
+    "https://tonetutor.tefusiang.com\n"
+)
+
+
 @router.post("")
-async def submit_feedback(body: FeedbackIn):
+async def submit_feedback(body: FeedbackIn, background: BackgroundTasks):
     uid = body.uid.strip()
     message = body.message.strip()
     contact = body.contact.strip()[:MAX_CONTACT_LEN]
@@ -69,6 +82,20 @@ async def submit_feedback(body: FeedbackIn):
         "ts": now,
         "day": now.strftime("%Y-%m-%d"),
     })
+
+    # Best-effort emails after the response: confirmation to the submitter
+    # (when they left a contact) and an instant heads-up to the owner.
+    if contact:
+        background.add_task(
+            send_email, contact, CONFIRMATION_SUBJECT,
+            CONFIRMATION_BODY.format(message=message),
+        )
+    background.add_task(
+        notify_owner,
+        f"🎫 New ToneTutor ticket — {contact or uid[:12]}",
+        f"Message:\n{message}\n\nContact: {contact or '(none left)'}\nuid: {uid}\nTime: {now.isoformat()}",
+        contact,  # reply_to: hit Reply to answer the user directly
+    )
     return {"ok": True}
 
 
